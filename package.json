@@ -12,8 +12,11 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc && tsc-alias",
-    "lint": "eslint 'src/**/*.ts'",
+    "lint": "eslint 'src/**/*.ts' --fix",
     "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "audit:fix": "npm audit fix",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
