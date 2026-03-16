@@ -1,85 +1,165 @@
- ملف README.md كامل، احترافي، ومصمم خصيصاً ليكون الواجهة الرسمية لـ TEC SDK. هذا الملف مكتوب باللغة الإنجليزية (لأنه المعيار التقني للمطورين) مع توضيحات باللغة العربية داخل الكود لتسهيل العمل على فريقك في الـ 24 قطاع.
-README.md
-# TEC SDK — Titan Elite Commerce 🚀
+TEC SDK — The Sovereign Bridge
 
-[![Publish TEC SDK](https://github.com/Yasser1728/tec-sdk/actions/workflows/publish.yml/badge.svg)](https://github.com/Yasser1728/tec-sdk/actions)
-![Node Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+"Build Status" (https://img.shields.io/github/actions/workflow/status/Yasser1728/tec-sdk/publish.yml?branch=main)
+"License" (https://img.shields.io/badge/license-MIT-blue)
+"Version" (https://img.shields.io/badge/version-1.0.0-green)
+"TypeScript" (https://img.shields.io/badge/TypeScript-Strict-blue)
 
-**TEC SDK** هو الجسر البرمجي السيادي الذي يربط بين الـ 24 قطاع أعمال (Sectors) وبين منصة **TEC** المركزية. تم تصميمه ليوفر أداءً عالياً، أماناً فائقاً، وتكاملاً سلساً مع نظام **Pi Network**.
+TEC SDK is a high-performance, enterprise-grade TypeScript library designed to orchestrate the digital economy of the Titan Elite Commerce (TEC) ecosystem.
+
+It provides a secure, resilient, and developer-friendly interface for interacting with TEC Core Services, Pi Network authentication, wallet management, and payment orchestration across multiple domains.
 
 ---
 
-## 📦 التثبيت (Installation)
+🚀 Features
 
-بما أن هذه المكتبة خاصة (Private) ومستضافة على **GitHub Packages**، يجب عليك التأكد من وجود ملف `.npmrc` في المجلد الرئيسي لمشروعك يحتوي على الآتي:
+- Multi-Domain Orchestration
+  Built to support the TEC ecosystem architecture of 24 independent applications.
 
-```text
-@yasser1728:registry=[https://npm.pkg.github.com](https://npm.pkg.github.com)
-//[npm.pkg.github.com/:_authToken=$](https://npm.pkg.github.com/:_authToken=$){NODE_AUTH_TOKEN}
+- Enterprise Security
+  Strict runtime validation using Zod schemas to ensure API contract integrity.
 
-ثم قم بتشغيل الأمر التالي:
+- Resilient Connectivity
+  Built-in retry system with exponential backoff for unstable network conditions.
+
+- Centralized Authentication
+  Secure token handling and automatic Authorization header injection.
+
+- Diagnostic Tools
+  Integrated Health Checks and structured logging using "Pino".
+
+- Developer Experience (DX)
+  Fully typed with TypeScript for autocomplete, safety, and maintainability.
+
+---
+
+📦 Installation
+
+Install the SDK using npm:
+
 npm install @yasser1728/tec-sdk
 
-🚀 دليل البدء السريع (Quick Start)
-يمكنك تشغيل الـ SDK والوصول لكل الخدمات (الهوية، المحفظة، المدفوعات) من خلال مكان واحد:
+---
+
+🛠️ Quick Start
+
 import { TecSdk } from '@yasser1728/tec-sdk';
 
-// تهيئة الـ SDK
 const tec = new TecSdk({
   apiKey: process.env.TEC_API_KEY,
-  gatewayUrl: '[https://api.tec-ecosystem.com](https://api.tec-ecosystem.com)'
+  gatewayUrl: 'https://api.tec-ecosystem.com'
 });
 
-async function start() {
-  try {
-    // 1. تسجيل الدخول عبر Pi Network
-    const auth = await tec.auth.loginWithPi('PI_ACCESS_TOKEN');
-    console.log(`Welcome, ${auth.user.username}`);
+// Check system health
+const isAlive = await tec.health.isAlive();
 
-    // 2. جلب رصيد المحفظة
-    const wallet = await tec.wallet.getBalance(auth.user.userId);
-    console.log(`Balance: ${wallet.balance} PI`);
-
-    // 3. تنفيذ عملية دفع
-    const payment = await tec.payment.createPayment(
-      auth.user.userId,
-      50, // المبلغ
-      'PI',
-      { orderId: 'INV-1001' } // بيانات إضافية
-    );
-  } catch (error) {
-    console.error('Error:', error.message);
-  }
+if (isAlive) {
+  console.log("TEC Systems Operational");
 }
 
-🏗️ الوحدات الأساسية (Core Modules)
-| الموديول | الوصف |
-|---|---|
-| AuthClient | المسؤول عن الهوية، تسجيل دخول Pi، وإدارة الجلسات (Sessions). |
-| WalletClient | لإدارة الأرصدة، عمليات الإيداع والخصم، وتاريخ المعاملات. |
-| PaymentClient | معالجة المدفوعات بأمان مع نظام إعادة محاولة أوتوماتيكي (Retry Logic). |
-🛡️ المميزات التقنية
- * Resiliency: مزود بنظام Exponential Backoff لإعادة المحاولة تلقائياً عند فشل الشبكة.
- * Type Safety: اعتماد كامل على Zod للتحقق من صحة البيانات القادمة من السيرفر.
- * Logging: نظام تتبع أخطاء عالي الأداء باستخدام Pino.
- * Tree Shaking: مكتبة خفيفة الوزن تسمح للمتصفح بحذف الأكواد غير المستخدمة لتقليل حجم التطبيق.
-🛠️ للتطوير والمساهمة (Development)
-إذا كنت ترغب في التعديل على الـ SDK نفسه:
- * قم بعمل Clone للمستودع: git clone https://github.com/Yasser1728/tec-sdk.git
- * تثبيت المكتبات: npm ci
- * تشغيل الاختبارات: npm test
- * بناء النسخة النهائية: npm run build
-📄 الترخيص (License)
-Internal use only for TEC | Titan Elite Commerce. Licensed under MIT.
-Maintained by @Yasser1728 — CEO & Founder of TEC.
+// Authenticate user with Pi Network
+const auth = await tec.auth.loginWithPi('user_pi_access_token');
+
+// Create secure payment
+const payment = await tec.payment.createPayment({
+  userId: auth.user.userId,
+  amount: 10,
+  currency: 'PI'
+});
 
 ---
 
-### **كيفية استخدامه؟**
-1. قم بإنشاء ملف جديد في المجلد الرئيسي لمشروعك (Root) باسم **`README.md`**.
-2. انسخ الكود أعلاه بالكامل والصقه فيه.
-3. بمجرد رفعه على GitHub، ستجده يظهر بشكل منسق واحترافي في واجهة المشروع.
+🏗️ Architecture
 
-**هل تحتاج مني أي تعديل إضافي على صياغة الأهداف أو المهام داخل الملف؟**
+TEC SDK follows a Facade Pattern architecture.
 
+All services are accessible through a single SDK entry point while remaining fully decoupled.
+
+Apps (Next.js)
+      │
+      ▼
+TEC SDK (Facade Layer)
+      │
+      ▼
+API Gateway
+      │
+      ▼
+Core Microservices
+ ├── Auth Service
+ ├── Payment Service
+ └── Wallet Service
+
+Each service operates independently with its own database and business logic.
+
+---
+
+📂 SDK Structure
+
+src/
+ ├── api/
+ │   ├── baseClient.ts
+ │   ├── authClient.ts
+ │   ├── paymentClient.ts
+ │   └── walletClient.ts
+ │
+ ├── utils/
+ │   └── logger.ts
+ │
+ └── index.ts
+
+BaseClient
+
+Handles:
+
+- HTTP communication
+- Authorization headers
+- Error normalization
+- Zod validation
+- Axios interceptors
+
+Service Clients
+
+Each service client extends BaseClient and implements domain-specific logic.
+
+---
+
+🧪 Testing & Quality
+
+We maintain strict quality standards with extensive automated tests.
+
+Run tests locally:
+
+npm test
+
+Generate coverage reports:
+
+npm run test:coverage
+
+Target coverage: 90%+
+
+---
+
+🛡️ Security & Auditing
+
+TEC SDK follows strict security practices:
+
+- Static Analysis powered by GitHub CodeQL
+- Runtime validation using Zod schemas
+- No secret logging (API keys or tokens are never written to logs)
+- Request validation on both client and server side
+
+---
+
+👨‍💻 Author
+
+Yasser1728
+CEO & Founder — Titan Elite Commerce (TEC)
+
+GitHub:
+https://github.com/Yasser1728
+
+---
+
+📄 License
+
+This project is licensed under the MIT License.
