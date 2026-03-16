@@ -1,8 +1,9 @@
 import { BaseClient } from './baseClient';
 import { z } from 'zod';
+import { logger } from '../utils/logger';
 
 /**
- * TEC Wallet API Contracts
+ * Wallet API Contracts
  */
 export const WalletBalanceSchema = z.object({
   userId: z.string(),
@@ -24,7 +25,7 @@ export type WalletBalance = z.infer<typeof WalletBalanceSchema>;
 export type WalletTransaction = z.infer<typeof WalletTransactionSchema>;
 
 /**
- * WalletClient — SDK wrapper for Wallet Service
+ * WalletClient — SDK wrapper for Wallet Service (Enhanced with Resiliency)
  */
 export class WalletClient extends BaseClient {
   constructor(baseURL: string, apiKey: string) {
@@ -32,38 +33,64 @@ export class WalletClient extends BaseClient {
   }
 
   /**
-   * Get user wallet balance from the federated wallet service
+   * Internal helper to execute requests with exponential backoff retries
    */
-  async getBalance(userId: string): Promise<WalletBalance> {
-    return this.get<WalletBalance>(`/wallets/${userId}/balance`, WalletBalanceSchema);
+  private async safeRequest<T>(
+    method: 'get' | 'post' | 'put' | 'delete',
+    path: string,
+    data?: unknown,
+    schema?: z.ZodSchema<T>,
+    retries = 3,
+    delayMs = 500
+  ): Promise<T> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        switch (method) {
+          case 'get': return await this.get<T>(path, schema);
+          case 'post': return await this.post<T>(path, data, schema);
+          case 'put': return await this.put<T>(path, data, schema);
+          case 'delete': return await this.delete<T>(path, schema);
+        }
+      } catch (err: any) {
+        logger.warn(`[WalletClient] Attempt ${attempt} failed`, {
+          method, path, error: err?.message || err,
+        });
+
+        if (attempt === retries) throw err;
+        await new Promise((r) => setTimeout(r, delayMs * Math.pow(2, attempt - 1)));
+      }
+    }
+    throw new Error('TEC_SDK_INTERNAL_ERROR: SafeRequest reached unreachable state');
   }
 
-  /**
-   * Credit user wallet (Add funds)
-   */
+  async getBalance(userId: string): Promise<WalletBalance> {
+    return this.safeRequest<WalletBalance>('get', `/wallets/${userId}/balance`, undefined, WalletBalanceSchema);
+  }
+
   async creditWallet(userId: string, amount: number, referenceId: string): Promise<WalletTransaction> {
-    return this.post<WalletTransaction>(
+    return this.safeRequest<WalletTransaction>(
+      'post',
       `/wallets/${userId}/credit`,
       { amount, referenceId },
       WalletTransactionSchema
     );
   }
 
-  /**
-   * Debit user wallet (Deduct funds)
-   */
   async debitWallet(userId: string, amount: number, referenceId: string): Promise<WalletTransaction> {
-    return this.post<WalletTransaction>(
+    return this.safeRequest<WalletTransaction>(
+      'post',
       `/wallets/${userId}/debit`,
       { amount, referenceId },
       WalletTransactionSchema
     );
   }
 
-  /**
-   * Fetch transaction history for a specific user
-   */
   async getTransactions(userId: string): Promise<WalletTransaction[]> {
-    return this.get<WalletTransaction[]>(`/wallets/${userId}/transactions`, z.array(WalletTransactionSchema));
+    return this.safeRequest<WalletTransaction[]>(
+      'get',
+      `/wallets/${userId}/transactions`,
+      undefined,
+      z.array(WalletTransactionSchema)
+    );
   }
 }
