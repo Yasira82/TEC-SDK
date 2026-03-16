@@ -8,14 +8,18 @@ export interface TecSdkConfig {
   gatewayUrl: string;
 }
 
-// ─── Export Clients ─────────────────────────────────────────────────────────
+// ─── Export Base & Clients ──────────────────────────────────────────────────
 export { BaseClient } from './api/baseClient';
 export { AuthClient } from './api/authClient';
 export { WalletClient } from './api/walletClient';
 export { PaymentClient } from './api/paymentClient';
+export { HealthClient } from './api/healthClient';
 
 // ─── Export Types & Schemas ─────────────────────────────────────────────────
-// We export everything from these files (Schemas + Types)
+/**
+ * Exporting all centralized types and module-specific schemas
+ */
+export * from './types';
 export * from './api/authClient';
 export * from './api/walletClient';
 export * from './api/paymentClient';
@@ -23,22 +27,29 @@ export * from './api/paymentClient';
 // ─── Export Utilities ───────────────────────────────────────────────────────
 export { logger, logInfo, logWarn, logError } from './utils/logger';
 
-/**
- * Global SDK Orchestrator (Optional helper class)
- * Use this to initialize all clients at once
- */
+// ─── Global SDK Orchestrator ────────────────────────────────────────────────
 import { AuthClient } from './api/authClient';
 import { WalletClient } from './api/walletClient';
 import { PaymentClient } from './api/paymentClient';
+import { HealthClient } from './api/healthClient';
 
+/**
+ * TecSdk Class
+ * The main orchestrator for all TEC services. 
+ * Use this class to initialize all clients with a single configuration.
+ */
 export class TecSdk {
   public readonly auth: AuthClient;
   public readonly wallet: WalletClient;
   public readonly payment: PaymentClient;
+  public readonly health: HealthClient;
 
   constructor(config: TecSdkConfig) {
-    this.auth = new AuthClient(config.gatewayUrl, config.apiKey);
-    this.wallet = new WalletClient(config.gatewayUrl, config.apiKey);
-    this.payment = new PaymentClient(config.gatewayUrl, config.apiKey);
+    const { gatewayUrl, apiKey } = config;
+
+    this.auth = new AuthClient(gatewayUrl, apiKey);
+    this.wallet = new WalletClient(gatewayUrl, apiKey);
+    this.payment = new PaymentClient(gatewayUrl, apiKey);
+    this.health = new HealthClient(gatewayUrl, apiKey);
   }
 }
