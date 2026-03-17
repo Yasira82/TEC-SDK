@@ -1,4 +1,4 @@
-import { TECHttpClient } from '../core/http-client';
+import { BaseClient } from '../api/baseClient';
 
 export interface CreateAssetDto {
   transactionId: string;
@@ -17,36 +17,38 @@ export interface Asset {
   updatedAt: string;
 }
 
-export class AssetsModule {
-  constructor(private httpClient: TECHttpClient) {}
+export class AssetsModule extends BaseClient {
+  constructor(baseURL: string, apiKey?: string) {
+    super(baseURL, apiKey);
+  }
 
   /** Health check for Asset Service */
   async getHealth(): Promise<{ status: string }> {
-    return this.httpClient.request('assets', '/health', 'GET');
+    return this.request<{ status: string }>('assets', '/health', 'GET');
   }
 
   /** Fetch all assets of a user */
   async getMyAssets(userId: string): Promise<Asset[]> {
-    return this.httpClient.request('assets', `/user/${userId}`, 'GET');
+    return this.request<Asset[]>('assets', `/user/${userId}`, 'GET');
   }
 
   /** Fetch a single asset by ID */
   async getAssetById(assetId: string): Promise<Asset> {
-    return this.httpClient.request('assets', `/${assetId}`, 'GET');
+    return this.request<Asset>('assets', `/${assetId}`, 'GET');
   }
 
   /** Create a new asset */
   async createAsset(data: CreateAssetDto): Promise<Asset> {
-    return this.httpClient.request('assets', '/', 'POST', data);
+    return this.request<Asset>('assets', '/', 'POST', data);
   }
 
   /** Update asset metadata */
   async updateAsset(assetId: string, metadata: Record<string, any>): Promise<Asset> {
-    return this.httpClient.request('assets', `/${assetId}`, 'PUT', { metadata });
+    return this.request<Asset>('assets', `/${assetId}`, 'PUT', { metadata });
   }
 
   /** Delete an asset */
   async deleteAsset(assetId: string): Promise<{ success: boolean }> {
-    return this.httpClient.request('assets', `/${assetId}`, 'DELETE');
+    return this.request<{ success: boolean }>('assets', `/${assetId}`, 'DELETE');
   }
 }
