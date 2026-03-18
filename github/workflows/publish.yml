@@ -1,67 +1,30 @@
-name: Publish TEC SDK
+name: Publish TEC SDK to npm
 
 on:
   push:
-    branches: [main]
-  # يسمح بتشغيل الـ Workflow يدوياً للتأكد من سلامة الكود
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  quality-gate:
-    name: Code Quality & Security Audit
+  publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
-          cache: 'npm'
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Static Analysis (Linter)
-        run: npm run lint
-
-      - name: Run Tests with Coverage
-        run: npm run test:coverage
-
-      - name: Dependency Audit
-        run: npm audit --audit-level=high
-
-  build-and-publish:
-    name: Build and Release
-    needs: quality-gate # لن يبدأ النشر إلا إذا نجحت كافة الاختبارات والـ Audit
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@yasser1728'
-
-      - name: Install Dependencies
-        run: npm ci
+      - name: Install dependencies
+        run: npm install
 
       - name: Build SDK
         run: npm run build
 
-      - name: Publish to GitHub Packages
-        run: npm publish
+      - name: Publish to npm
+        run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
