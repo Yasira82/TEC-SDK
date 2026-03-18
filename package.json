@@ -38,10 +38,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Yasser1728/tec-sdk.git"
+    "url": "git+https://github.com/Yasser1728/TEC-SDK.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   },
   "engines": {
     "node": ">=20.0.0"
