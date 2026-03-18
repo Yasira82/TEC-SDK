@@ -1,6 +1,12 @@
-WalletBalanceSchema
 import { BaseClient } from './baseClient';
 import { z } from 'zod';
+
+// ✅ WalletBalanceSchema أول حاجة في الملف
+export const WalletBalanceSchema = z.object({
+  balance: z.number(),
+  currency: z.string().optional(),
+  userId: z.string().optional(),
+});
 
 export const WalletSchema = z.object({
   id: z.string(),
@@ -21,16 +27,9 @@ export const WalletTransactionSchema = z.object({
   created_at: z.string().optional(),
 });
 
-// ✅ ده اللي كان ناقص
-export const WalletBalanceSchema = z.object({
-  balance: z.number(),
-  currency: z.string().optional(),
-  userId: z.string().optional(),
-});
-
+export type WalletBalance = z.infer<typeof WalletBalanceSchema>;
 export type Wallet = z.infer<typeof WalletSchema>;
 export type WalletTransaction = z.infer<typeof WalletTransactionSchema>;
-export type WalletBalance = z.infer<typeof WalletBalanceSchema>;
 
 export class WalletClient extends BaseClient {
   constructor(baseURL: string, apiKey?: string) {
@@ -74,4 +73,4 @@ export class WalletClient extends BaseClient {
       return res?.data?.transactions ?? res?.transactions ?? [];
     });
   }
-  }
+}
