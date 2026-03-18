@@ -1,84 +1,122 @@
 import { BaseClient } from './baseClient';
 import { z } from 'zod';
-import { logger } from '../utils/logger';
 
-/**
- * TEC Payment API Contracts
- */
+// ✅ Schema يطابق payment-service response الحقيقي
 export const PaymentSchema = z.object({
-  paymentId: z.string(),
+  id: z.string(),
   userId: z.string(),
   amount: z.number(),
   currency: z.string(),
+  payment_method: z.string(),
   status: z.enum(['created', 'approved', 'completed', 'failed', 'cancelled']),
-  piPaymentId: z.string().nullable(),
-  transactionId: z.string().nullable(),
+  pi_payment_id: z.string().nullable().optional(),
+  transaction_id: z.string().nullable().optional(),
   metadata: z.record(z.any()).optional(),
-  createdAt: z.string().transform((s) => new Date(s)),
-  updatedAt: z.string().transform((s) => new Date(s)),
-  approvedAt: z.string().nullable().transform((s) => s ? new Date(s) : null),
-  completedAt: z.string().nullable().transform((s) => s ? new Date(s) : null),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type Payment = z.infer<typeof PaymentSchema>;
 
-/**
- * PaymentClient — SDK wrapper for Payment Service (Enhanced with Resiliency)
- */
+export const CreatePaymentResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    payment: PaymentSchema,
+  }),
+});
+
 export class PaymentClient extends BaseClient {
-  constructor(baseURL: string, apiKey: string) {
+  constructor(baseURL: string, apiKey?: string) {
     super(baseURL, apiKey);
   }
 
-  /**
-   * Internal helper to execute requests with exponential backoff retries
-   */
-  private async safeRequest<T>(
-    method: 'get' | 'post' | 'put' | 'delete',
-    path: string,
-    data?: unknown,
-    schema?: z.ZodSchema<T>,
-    retries = 3,
-    delayMs = 500
-  ): Promise<T> {
-    for (let attempt = 1; attempt <= retries; attempt++) {
+  private async withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
+    for (let i = 1; i <= retries; i++) {
       try {
-        switch (method) {
-          case 'get': return await this.get<T>(path, schema);
-          case 'post': return await this.post<T>(path, data, schema);
-          case 'put': return await this.put<T>(path, data, schema);
-          case 'delete': return await this.delete<T>(path, schema);
-        }
+        return await fn();
       } catch (err: any) {
-        logger.warn(`[PaymentClient] Attempt ${attempt} failed`, {
-          method, path, error: err?.message || err,
-        });
-        
-        if (attempt === retries) throw err;
-        // Wait before next attempt: 500ms, 1000ms, 2000ms...
-        await new Promise((r) => setTimeout(r, delayMs * Math.pow(2, attempt - 1)));
+        if (i === retries) throw err;
+        await new Promise((r) => setTimeout(r, 500 * Math.pow(2, i - 1)));
       }
     }
-    throw new Error('TEC_SDK_INTERNAL_ERROR: SafeRequest reached unreachable state');
+    throw new Error('Unreachable');
   }
 
-  async createPayment(userId: string, amount: number, currency = 'PI', metadata?: Record<string, unknown>): Promise<Payment> {
-    return this.safeRequest<Payment>('post', '/payments', { userId, amount, currency, metadata }, PaymentSchema);
+  // POST /api/payments/create
+  async create(params: {
+    userId: string;
+    amount: number;
+    currency?: string;
+    payment_method?: string;
+    metadata?: Record<string, any>;
+  }): Promise<Payment> {
+    return this.withRetry(async () => {
+      const res = await this.post<any>('/api/payments/create', {
+        userId: params.userId,
+        amount: params.amount,
+        currency: params.currency || 'PI',
+        payment_method: params.payment_method || 'pi',
+        metadata: params.metadata,
+      });
+      return res?.data?.payment ?? res;
+    });
   }
 
-  async approvePayment(paymentId: string, metadata?: Record<string, unknown>): Promise<Payment> {
-    return this.safeRequest<Payment>('post', `/payments/${paymentId}/approve`, { metadata }, PaymentSchema);
+  // POST /api/payments/approve
+  async approve(params: {
+    payment_id: string;
+    pi_payment_id?: string;
+  }): Promise<Payment> {
+    return this.withRetry(async () => {
+      const res = await this.post<any>('/api/payments/approve', params);
+      return res?.data?.payment ?? res;
+    });
   }
 
-  async completePayment(paymentId: string, transactionId?: string, metadata?: Record<string, unknown>): Promise<Payment> {
-    return this.safeRequest<Payment>('post', `/payments/${paymentId}/complete`, { transactionId, metadata }, PaymentSchema);
+  // POST /api/payments/complete
+  async complete(params: {
+    payment_id: string;
+    transaction_id?: string;
+  }): Promise<Payment> {
+    return this.withRetry(async () => {
+      const res = await this.post<any>('/api/payments/complete', params);
+      return res?.data?.payment ?? res;
+    });
   }
 
-  async getPayment(paymentId: string): Promise<Payment> {
-    return this.safeRequest<Payment>('get', `/payments/${paymentId}`, undefined, PaymentSchema);
+  // POST /api/payments/cancel
+  async cancel(payment_id: string): Promise<Payment> {
+    return this.withRetry(async () => {
+      const res = await this.post<any>('/api/payments/cancel', { payment_id });
+      return res?.data?.payment ?? res;
+    });
   }
 
-  async listUserPayments(userId: string): Promise<Payment[]> {
-    return this.safeRequest<Payment[]>('get', `/payments/user/${userId}`, undefined, z.array(PaymentSchema));
+  // GET /api/payments/:id/status
+  async getStatus(paymentId: string): Promise<Payment> {
+    return this.withRetry(async () => {
+      const res = await this.get<any>(`/api/payments/${paymentId}/status`);
+      return res?.data?.payment ?? res;
+    });
   }
-}
+
+  // GET /api/payments/history
+  async getHistory(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<Payment[]> {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.status) query.set('status', params.status);
+
+    const res = await this.get<any>(`/api/payments/history?${query.toString()}`);
+    return res?.data?.payments ?? res ?? [];
+  }
+
+  // POST /api/payments/resolve-incomplete
+  async resolveIncomplete(pi_payment_id: string): Promise<any> {
+    return this.post('/api/payments/resolve-incomplete', { pi_payment_id });
+  }
+        }
