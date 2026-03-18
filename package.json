@@ -1,5 +1,5 @@
 {
-  "name": "@yasser1728/tec-sdk",
+  "name": "@yasser172/tec-sdk",
   "version": "1.0.0",
   "description": "TEC SDK — The sovereign bridge between 24 Domains and TEC Core Platform",
   "main": "./dist/index.js",
@@ -54,6 +54,6 @@
     "Fintech",
     "Web3"
   ],
-  "author": "Yasser1728",
+  "author": "yasser172",
   "license": "MIT"
 }
