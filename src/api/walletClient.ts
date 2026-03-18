@@ -1,96 +1,69 @@
 import { BaseClient } from './baseClient';
 import { z } from 'zod';
-import { logger } from '../utils/logger';
 
-/**
- * Wallet API Contracts
- */
-export const WalletBalanceSchema = z.object({
+export const WalletSchema = z.object({
+  id: z.string(),
   userId: z.string(),
   balance: z.number(),
   currency: z.string(),
+  is_primary: z.boolean().optional(),
+  created_at: z.string().optional(),
 });
 
 export const WalletTransactionSchema = z.object({
-  transactionId: z.string(),
+  id: z.string(),
   userId: z.string(),
   amount: z.number(),
   currency: z.string(),
-  status: z.enum(['pending', 'completed', 'failed']),
-  createdAt: z.string().transform((s) => new Date(s)),
-  updatedAt: z.string().transform((s) => new Date(s)),
+  type: z.string().optional(),
+  status: z.enum(['pending', 'completed', 'failed']).optional(),
+  created_at: z.string().optional(),
 });
 
-export type WalletBalance = z.infer<typeof WalletBalanceSchema>;
+export type Wallet = z.infer<typeof WalletSchema>;
 export type WalletTransaction = z.infer<typeof WalletTransactionSchema>;
 
-/**
- * WalletClient — SDK wrapper for Wallet Service (Enhanced with Resiliency)
- */
 export class WalletClient extends BaseClient {
-  constructor(baseURL: string, apiKey: string) {
+  constructor(baseURL: string, apiKey?: string) {
     super(baseURL, apiKey);
   }
 
-  /**
-   * Internal helper to execute requests with exponential backoff retries
-   */
-  private async safeRequest<T>(
-    method: 'get' | 'post' | 'put' | 'delete',
-    path: string,
-    data?: unknown,
-    schema?: z.ZodSchema<T>,
-    retries = 3,
-    delayMs = 500
-  ): Promise<T> {
-    for (let attempt = 1; attempt <= retries; attempt++) {
+  private async withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
+    for (let i = 1; i <= retries; i++) {
       try {
-        switch (method) {
-          case 'get': return await this.get<T>(path, schema);
-          case 'post': return await this.post<T>(path, data, schema);
-          case 'put': return await this.put<T>(path, data, schema);
-          case 'delete': return await this.delete<T>(path, schema);
-        }
+        return await fn();
       } catch (err: any) {
-        logger.warn(`[WalletClient] Attempt ${attempt} failed`, {
-          method, path, error: err?.message || err,
-        });
-
-        if (attempt === retries) throw err;
-        await new Promise((r) => setTimeout(r, delayMs * Math.pow(2, attempt - 1)));
+        if (i === retries) throw err;
+        await new Promise((r) => setTimeout(r, 500 * Math.pow(2, i - 1)));
       }
     }
-    throw new Error('TEC_SDK_INTERNAL_ERROR: SafeRequest reached unreachable state');
+    throw new Error('Unreachable');
   }
 
-  async getBalance(userId: string): Promise<WalletBalance> {
-    return this.safeRequest<WalletBalance>('get', `/wallets/${userId}/balance`, undefined, WalletBalanceSchema);
+  // GET /api/wallets?userId=...
+  async getWallets(userId: string): Promise<Wallet[]> {
+    return this.withRetry(async () => {
+      const res = await this.get<any>(
+        `/api/wallets?userId=${encodeURIComponent(userId)}`
+      );
+      return res?.data?.wallets ?? res?.wallets ?? [];
+    });
   }
 
-  async creditWallet(userId: string, amount: number, referenceId: string): Promise<WalletTransaction> {
-    return this.safeRequest<WalletTransaction>(
-      'post',
-      `/wallets/${userId}/credit`,
-      { amount, referenceId },
-      WalletTransactionSchema
-    );
+  // GET balance من أول wallet
+  async getBalance(userId: string): Promise<number> {
+    return this.withRetry(async () => {
+      const wallets = await this.getWallets(userId);
+      const primary = wallets.find((w) => w.is_primary) ?? wallets[0];
+      return primary?.balance ?? 0;
+    });
   }
 
-  async debitWallet(userId: string, amount: number, referenceId: string): Promise<WalletTransaction> {
-    return this.safeRequest<WalletTransaction>(
-      'post',
-      `/wallets/${userId}/debit`,
-      { amount, referenceId },
-      WalletTransactionSchema
-    );
-  }
-
-  async getTransactions(userId: string): Promise<WalletTransaction[]> {
-    return this.safeRequest<WalletTransaction[]>(
-      'get',
-      `/wallets/${userId}/transactions`,
-      undefined,
-      z.array(WalletTransactionSchema)
-    );
+  // GET /api/wallets/:id/transactions
+  async getTransactions(walletId: string): Promise<WalletTransaction[]> {
+    return this.withRetry(async () => {
+      const res = await this.get<any>(`/api/wallets/${walletId}/transactions`);
+      return res?.data?.transactions ?? res?.transactions ?? [];
+    });
   }
 }
