@@ -25,7 +25,6 @@ export class TecSdk {
     this.assets  = new AssetClient(gatewayUrl, apiKey);
   }
 
-  // ✅ بعد الـ login، set token في كل الـ clients
   setAuthToken(token: string): void {
     this.wallet.setToken(token);
     this.payment.setToken(token);
@@ -40,9 +39,10 @@ export class TecSdk {
   }
 }
 
-export * from './types';
+// ✅ Exports
 export * from './api/authClient';
 export * from './api/walletClient';
 export * from './api/paymentClient';
 export * from './api/assetClient';
+export * from './api/healthClient';
 export { logger, logInfo, logWarn, logError } from './utils/logger';
