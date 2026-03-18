@@ -1,19 +1,20 @@
 import { BaseClient } from './baseClient';
 import { z } from 'zod';
 
+// ✅ مفيش transform — string بس
 export const ServiceHealthSchema = z.object({
   service: z.string(),
   status: z.enum(['up', 'down', 'degraded']),
   version: z.string().optional(),
   uptime: z.number().optional(),
   latency: z.number(),
-  lastChecked: z.string().transform((s) => new Date(s)),
+  lastChecked: z.string(),  // ✅ string مش Date
 });
 
 export const SystemHealthSchema = z.object({
   overallStatus: z.enum(['healthy', 'unhealthy', 'warning']),
   services: z.array(ServiceHealthSchema),
-  timestamp: z.string().transform((s) => new Date(s)),
+  timestamp: z.string(),    // ✅ string مش Date
 });
 
 export type ServiceHealth = z.infer<typeof ServiceHealthSchema>;
@@ -24,7 +25,6 @@ export class HealthClient extends BaseClient {
     super(baseURL, apiKey);
   }
 
-  // ✅ get بياخد (path, schema) بس — مش 3 arguments
   async getSystemStatus(): Promise<SystemHealth> {
     return this.get<SystemHealth>('/health/status', SystemHealthSchema);
   }
@@ -36,13 +36,7 @@ export class HealthClient extends BaseClient {
     );
   }
 
-  async ping(): Promise<{ message: string; timestamp: Date }> {
-    const response = await this.get<{ message: string; timestamp: string }>(
-      '/health/ping'
-    );
-    return {
-      message: response.message,
-      timestamp: new Date(response.timestamp),
-    };
+  async ping(): Promise<{ message: string; timestamp: string }> {
+    return this.get('/health/ping');
   }
-      }
+}
