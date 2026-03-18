@@ -1,3 +1,4 @@
+WalletBalanceSchema
 import { BaseClient } from './baseClient';
 import { z } from 'zod';
 
@@ -20,8 +21,16 @@ export const WalletTransactionSchema = z.object({
   created_at: z.string().optional(),
 });
 
+// ✅ ده اللي كان ناقص
+export const WalletBalanceSchema = z.object({
+  balance: z.number(),
+  currency: z.string().optional(),
+  userId: z.string().optional(),
+});
+
 export type Wallet = z.infer<typeof WalletSchema>;
 export type WalletTransaction = z.infer<typeof WalletTransactionSchema>;
+export type WalletBalance = z.infer<typeof WalletBalanceSchema>;
 
 export class WalletClient extends BaseClient {
   constructor(baseURL: string, apiKey?: string) {
@@ -40,7 +49,6 @@ export class WalletClient extends BaseClient {
     throw new Error('Unreachable');
   }
 
-  // GET /api/wallets?userId=...
   async getWallets(userId: string): Promise<Wallet[]> {
     return this.withRetry(async () => {
       const res = await this.get<any>(
@@ -50,7 +58,6 @@ export class WalletClient extends BaseClient {
     });
   }
 
-  // GET balance من أول wallet
   async getBalance(userId: string): Promise<number> {
     return this.withRetry(async () => {
       const wallets = await this.getWallets(userId);
@@ -59,11 +66,12 @@ export class WalletClient extends BaseClient {
     });
   }
 
-  // GET /api/wallets/:id/transactions
   async getTransactions(walletId: string): Promise<WalletTransaction[]> {
     return this.withRetry(async () => {
-      const res = await this.get<any>(`/api/wallets/${walletId}/transactions`);
+      const res = await this.get<any>(
+        `/api/wallets/${walletId}/transactions`
+      );
       return res?.data?.transactions ?? res?.transactions ?? [];
     });
   }
-}
+  }
