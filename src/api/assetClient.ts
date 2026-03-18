@@ -1,7 +1,6 @@
-import { BaseClient } from '../api/baseClient';
+import { BaseClient } from './baseClient';
 import { z } from 'zod';
 
-/** DTOs & Types */
 export const CreateAssetSchema = z.object({
   transactionId: z.string(),
   ownerId: z.string(),
@@ -23,45 +22,39 @@ export const AssetSchema = z.object({
 
 export type Asset = z.infer<typeof AssetSchema>;
 
-/** AssetsModule */
-export class AssetsModule extends BaseClient {
+// ✅ اسم الـ class اتغير لـ AssetClient
+export class AssetClient extends BaseClient {
   constructor(baseURL: string, apiKey?: string) {
-    super(baseURL, apiKey || '');
+    super(baseURL, apiKey);
   }
 
-  /** Health check for Asset Service */
   async getHealth(): Promise<{ status: string }> {
-    return this.request<{ status: string }>('assets', '/health', 'GET');
+    return this.get('/api/assets/health');
   }
 
-  /** Fetch all assets of a user */
   async getMyAssets(userId: string): Promise<Asset[]> {
-    const res = await this.request<unknown>('assets', `/user/${userId}`, 'GET');
-    return z.array(AssetSchema).parse(res);
+    const res = await this.get<any>(`/api/assets/user/${userId}`);
+    return z.array(AssetSchema).parse(res?.data ?? res);
   }
 
-  /** Fetch a single asset by ID */
   async getAssetById(assetId: string): Promise<Asset> {
-    const res = await this.request<unknown>('assets', `/${assetId}`, 'GET');
-    return AssetSchema.parse(res);
+    const res = await this.get<any>(`/api/assets/${assetId}`);
+    return AssetSchema.parse(res?.data ?? res);
   }
 
-  /** Create a new asset */
   async createAsset(data: CreateAssetDto): Promise<Asset> {
     const parsed = CreateAssetSchema.parse(data);
-    const res = await this.request<unknown>('assets', '/', 'POST', parsed);
-    return AssetSchema.parse(res);
+    const res = await this.post<any>('/api/assets', parsed);
+    return AssetSchema.parse(res?.data ?? res);
   }
 
-  /** Update asset metadata */
   async updateAsset(assetId: string, metadata: Record<string, any>): Promise<Asset> {
-    const res = await this.request<unknown>('assets', `/${assetId}`, 'PUT', { metadata });
-    return AssetSchema.parse(res);
+    const res = await this.put<any>(`/api/assets/${assetId}`, { metadata });
+    return AssetSchema.parse(res?.data ?? res);
   }
 
-  /** Delete an asset */
   async deleteAsset(assetId: string): Promise<{ success: boolean }> {
-    const res = await this.request<unknown>('assets', `/${assetId}`, 'DELETE');
-    return z.object({ success: z.boolean() }).parse(res);
+    const res = await this.delete<any>(`/api/assets/${assetId}`);
+    return z.object({ success: z.boolean() }).parse(res?.data ?? res);
   }
-}
+      }
