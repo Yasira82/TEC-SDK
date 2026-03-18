@@ -1,4 +1,4 @@
-TEC SDK — The Sovereign Bridge
+TEC SDK — The Sovereign Bridge.
 
 "Build Status" (https://img.shields.io/github/actions/workflow/status/Yasser1728/tec-sdk/publish.yml?branch=main)
 "License" (https://img.shields.io/badge/license-MIT-blue)
