@@ -7,7 +7,6 @@ export const WalletBalanceSchema = z.object({
   currency: z.string().default('PI'),
 });
 
-// ✅ transactionId بدل id — يطابق الـ mock data في الـ tests
 export const WalletTransactionSchema = z.object({
   transactionId: z.string(),
   userId: z.string(),
@@ -86,4 +85,4 @@ export class WalletClient extends BaseClient {
       return z.array(WalletTransactionSchema).parse(res);
     });
   }
-}
+  }
