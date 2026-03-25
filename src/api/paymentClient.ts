@@ -10,10 +10,22 @@ export const PaymentSchema = z.object({
   piPaymentId: z.string().nullable().optional(),
   transactionId: z.string().nullable().optional(),
   metadata: z.record(z.any()).optional(),
-  createdAt: z.preprocess((v) => (v ? new Date(v as string) : null), z.date().nullable()),
-  updatedAt: z.preprocess((v) => (v ? new Date(v as string) : null), z.date().nullable()),
-  approvedAt: z.preprocess((v) => (v ? new Date(v as string) : null), z.date().nullable()),
-  completedAt: z.preprocess((v) => (v ? new Date(v as string) : null), z.date().nullable()),
+  createdAt: z.preprocess(
+    (v) => (v ? new Date(v as string) : null),
+    z.date().nullable(),
+  ),
+  updatedAt: z.preprocess(
+    (v) => (v ? new Date(v as string) : null),
+    z.date().nullable(),
+  ),
+  approvedAt: z.preprocess(
+    (v) => (v ? new Date(v as string) : null),
+    z.date().nullable(),
+  ),
+  completedAt: z.preprocess(
+    (v) => (v ? new Date(v as string) : null),
+    z.date().nullable(),
+  ),
 });
 
 export type Payment = z.infer<typeof PaymentSchema>;
@@ -61,7 +73,11 @@ export class PaymentClient extends BaseClient {
     metadata?: Record<string, unknown>,
   ): Promise<Payment> {
     return this.withRetry(() =>
-      this.post(`/payments/${paymentId}/complete`, { transactionId, metadata }, PaymentSchema),
+      this.post(
+        `/payments/${paymentId}/complete`,
+        { transactionId, metadata },
+        PaymentSchema,
+      ),
     );
   }
 
@@ -89,4 +105,4 @@ export class PaymentClient extends BaseClient {
       this.post('/payments/resolve-incomplete', { piPaymentId }, PaymentSchema),
     );
   }
-      }
+}
