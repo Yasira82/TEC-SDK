@@ -1,20 +1,10 @@
 import { BaseClient } from './baseClient';
 import { z } from 'zod';
 
-// ✅ WalletBalanceSchema أول حاجة في الملف
 export const WalletBalanceSchema = z.object({
-  balance: z.number(),
-  currency: z.string().optional(),
-  userId: z.string().optional(),
-});
-
-export const WalletSchema = z.object({
-  id: z.string(),
   userId: z.string(),
   balance: z.number(),
-  currency: z.string(),
-  is_primary: z.boolean().optional(),
-  created_at: z.string().optional(),
+  currency: z.string().default('PI'),
 });
 
 export const WalletTransactionSchema = z.object({
@@ -24,11 +14,17 @@ export const WalletTransactionSchema = z.object({
   currency: z.string(),
   type: z.string().optional(),
   status: z.enum(['pending', 'completed', 'failed']).optional(),
-  created_at: z.string().optional(),
+  createdAt: z.preprocess(
+    (v) => (v ? new Date(v as string) : null),
+    z.date().nullable(),
+  ),
+  updatedAt: z.preprocess(
+    (v) => (v ? new Date(v as string) : null),
+    z.date().nullable(),
+  ),
 });
 
 export type WalletBalance = z.infer<typeof WalletBalanceSchema>;
-export type Wallet = z.infer<typeof WalletSchema>;
 export type WalletTransaction = z.infer<typeof WalletTransactionSchema>;
 
 export class WalletClient extends BaseClient {
@@ -40,7 +36,7 @@ export class WalletClient extends BaseClient {
     for (let i = 1; i <= retries; i++) {
       try {
         return await fn();
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (i === retries) throw err;
         await new Promise((r) => setTimeout(r, 500 * Math.pow(2, i - 1)));
       }
@@ -48,29 +44,45 @@ export class WalletClient extends BaseClient {
     throw new Error('Unreachable');
   }
 
-  async getWallets(userId: string): Promise<Wallet[]> {
+  async getBalance(userId: string): Promise<WalletBalance> {
     return this.withRetry(async () => {
-      const res = await this.get<any>(
-        `/api/wallets?userId=${encodeURIComponent(userId)}`
-      );
-      return res?.data?.wallets ?? res?.wallets ?? [];
+      const res = await this.get<unknown>(`/wallets/${userId}/balance`);
+      return WalletBalanceSchema.parse(res);
     });
   }
 
-  async getBalance(userId: string): Promise<number> {
+  async creditWallet(
+    userId: string,
+    amount: number,
+    referenceId: string,
+  ): Promise<WalletTransaction> {
     return this.withRetry(async () => {
-      const wallets = await this.getWallets(userId);
-      const primary = wallets.find((w) => w.is_primary) ?? wallets[0];
-      return primary?.balance ?? 0;
+      const res = await this.post<unknown>(`/wallets/${userId}/credit`, {
+        amount,
+        referenceId,
+      });
+      return WalletTransactionSchema.parse(res);
     });
   }
 
-  async getTransactions(walletId: string): Promise<WalletTransaction[]> {
+  async debitWallet(
+    userId: string,
+    amount: number,
+    referenceId: string,
+  ): Promise<WalletTransaction> {
     return this.withRetry(async () => {
-      const res = await this.get<any>(
-        `/api/wallets/${walletId}/transactions`
-      );
-      return res?.data?.transactions ?? res?.transactions ?? [];
+      const res = await this.post<unknown>(`/wallets/${userId}/debit`, {
+        amount,
+        referenceId,
+      });
+      return WalletTransactionSchema.parse(res);
     });
   }
-}
+
+  async getTransactions(userId: string): Promise<WalletTransaction[]> {
+    return this.withRetry(async () => {
+      const res = await this.get<unknown[]>(`/wallets/${userId}/transactions`);
+      return z.array(WalletTransactionSchema).parse(res);
+    });
+  }
+                                            }
