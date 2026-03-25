@@ -35,37 +35,24 @@ export class PaymentClient extends BaseClient {
     throw new Error('Unreachable');
   }
 
-  private parsePayment(raw: unknown): Payment {
-    return PaymentSchema.parse(raw);
-  }
-
   async createPayment(
     userId: string,
     amount: number,
     currency = 'PI',
     metadata?: Record<string, unknown>,
   ): Promise<Payment> {
-    return this.withRetry(async () => {
-      const res = await this.post<unknown>('/payments', {
-        userId,
-        amount,
-        currency,
-        metadata,
-      });
-      return this.parsePayment(res);
-    });
+    return this.withRetry(() =>
+      this.post('/payments', { userId, amount, currency, metadata }, PaymentSchema),
+    );
   }
 
   async approvePayment(
     paymentId: string,
     metadata?: Record<string, unknown>,
   ): Promise<Payment> {
-    return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/payments/${paymentId}/approve`, {
-        metadata,
-      });
-      return this.parsePayment(res);
-    });
+    return this.withRetry(() =>
+      this.post(`/payments/${paymentId}/approve`, { metadata }, PaymentSchema),
+    );
   }
 
   async completePayment(
@@ -73,27 +60,21 @@ export class PaymentClient extends BaseClient {
     transactionId: string,
     metadata?: Record<string, unknown>,
   ): Promise<Payment> {
-    return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/payments/${paymentId}/complete`, {
-        transactionId,
-        metadata,
-      });
-      return this.parsePayment(res);
-    });
+    return this.withRetry(() =>
+      this.post(`/payments/${paymentId}/complete`, { transactionId, metadata }, PaymentSchema),
+    );
   }
 
   async cancelPayment(paymentId: string): Promise<Payment> {
-    return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/payments/${paymentId}/cancel`, {});
-      return this.parsePayment(res);
-    });
+    return this.withRetry(() =>
+      this.post(`/payments/${paymentId}/cancel`, {}, PaymentSchema),
+    );
   }
 
   async getPayment(paymentId: string): Promise<Payment> {
-    return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/payments/${paymentId}`);
-      return this.parsePayment(res);
-    });
+    return this.withRetry(() =>
+      this.get(`/payments/${paymentId}`, PaymentSchema),
+    );
   }
 
   async listUserPayments(userId: string): Promise<Payment[]> {
@@ -104,11 +85,8 @@ export class PaymentClient extends BaseClient {
   }
 
   async resolveIncomplete(piPaymentId: string): Promise<Payment> {
-    return this.withRetry(async () => {
-      const res = await this.post<unknown>('/payments/resolve-incomplete', {
-        piPaymentId,
-      });
-      return this.parsePayment(res);
-    });
+    return this.withRetry(() =>
+      this.post('/payments/resolve-incomplete', { piPaymentId }, PaymentSchema),
+    );
   }
-                          }
+      }
