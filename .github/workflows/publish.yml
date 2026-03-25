@@ -17,7 +17,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install  # ✅ بدل npm ci
 
       - name: Zero-Width Character Scan
         run: |
@@ -52,7 +52,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install  # ✅ بدل npm ci
 
       - name: Run Tests
         run: npm test
