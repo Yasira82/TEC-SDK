@@ -42,21 +42,19 @@ export class AuthClient extends BaseClient {
         accessToken: piAccessToken,
       });
     } catch (err: unknown) {
-      // ✅ إذا interceptor شتغل — يرمي TecSdkError
       if (err instanceof TecSdkError) throw err;
 
-      // ✅ إذا الـ mock رمى object عادي (axios error shape)
       const anyErr = err as Record<string, unknown>;
-      const status =
-        (anyErr?.response as Record<string, unknown>)?.status as number ?? 500;
+      const response = anyErr?.response as Record<string, unknown> | undefined;
+      const status = (response?.status as number) ?? 500;
       const message =
-        ((anyErr?.response as Record<string, unknown>)?.data as Record<string, unknown>)
-          ?.message as string ?? String(anyErr?.message ?? 'Request failed');
+        ((response?.data as Record<string, unknown>)?.message as string) ??
+        (anyErr?.message as string) ??
+        'Authentication failed';
 
       throw new TecSdkError(status, message, err);
     }
 
-    // ✅ Zod validation — يرمي error إذا data ناقصة
     const response = LoginResponseSchema.parse(raw);
 
     this.setToken(response.tokens.accessToken);
