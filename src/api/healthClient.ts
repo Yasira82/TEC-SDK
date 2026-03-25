@@ -26,22 +26,19 @@ export class HealthClient extends BaseClient {
 
   async isAlive(): Promise<boolean> {
     try {
-      const res = await this.get<{ status: string }>('/health');
-      return res?.status === 'up' || true;
+      await this.get<unknown>('/health');
+      return true;
     } catch {
       return false;
     }
   }
 
   async getSystemStatus(): Promise<SystemHealth> {
-    return this.get<SystemHealth>('/health/status', SystemHealthSchema);
+    return this.get('/health/status', SystemHealthSchema);
   }
 
   async checkService(serviceName: string): Promise<ServiceHealth> {
-    return this.get<ServiceHealth>(
-      `/health/check/${serviceName}`,
-      ServiceHealthSchema,
-    );
+    return this.get(`/health/check/${serviceName}`, ServiceHealthSchema);
   }
 
   async ping(): Promise<{ message: string; timestamp: string }> {
