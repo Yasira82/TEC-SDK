@@ -1,89 +1,105 @@
-import { BaseClient } from './baseClient';
+import { BaseClient, TecSdkError } from './baseClient';
 import { z } from 'zod';
 
-export const WalletBalanceSchema = z.object({
-  userId: z.string(),
-  balance: z.number(),
-  currency: z.string().default('PI'),
+export const AuthUserSchema = z.object({
+  id: z.string(),
+  piId: z.string(),
+  piUsername: z.string(),
+  role: z.string(),
+  subscriptionPlan: z.string().nullable(),
+  createdAt: z.string(),
 });
 
-// ✅ transactionId بدل id — يطابق الـ mock data في الـ tests
-export const WalletTransactionSchema = z.object({
-  transactionId: z.string(),
-  userId: z.string(),
-  amount: z.number(),
-  currency: z.string(),
-  type: z.string().optional(),
-  status: z.enum(['pending', 'completed', 'failed']).optional(),
-  createdAt: z.preprocess(
-    (v) => (v ? new Date(v as string) : null),
-    z.date().nullable(),
-  ),
-  updatedAt: z.preprocess(
-    (v) => (v ? new Date(v as string) : null),
-    z.date().nullable(),
-  ),
+export const AuthTokensSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
 });
 
-export type WalletBalance = z.infer<typeof WalletBalanceSchema>;
-export type WalletTransaction = z.infer<typeof WalletTransactionSchema>;
+export const LoginResponseSchema = z.object({
+  success: z.boolean(),
+  isNewUser: z.boolean(),
+  user: AuthUserSchema,
+  tokens: AuthTokensSchema,
+});
 
-export class WalletClient extends BaseClient {
+export type AuthUser = z.infer<typeof AuthUserSchema>;
+export type AuthTokens = z.infer<typeof AuthTokensSchema>;
+export type LoginResponse = z.infer<typeof LoginResponseSchema>;
+
+export const UserSchema = AuthUserSchema;
+export type User = AuthUser;
+
+export class AuthClient extends BaseClient {
   constructor(baseURL: string, apiKey?: string) {
     super(baseURL, apiKey);
   }
 
-  private async withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
-    for (let i = 1; i <= retries; i++) {
-      try {
-        return await fn();
-      } catch (err: unknown) {
-        if (i === retries) throw err;
-        await new Promise((r) => setTimeout(r, 500 * Math.pow(2, i - 1)));
-      }
+  async loginWithPi(piAccessToken: string): Promise<LoginResponse> {
+    let raw: unknown;
+
+    try {
+      raw = await this.post<unknown>('/api/auth/pi-login', {
+        accessToken: piAccessToken,
+      });
+    } catch (err: unknown) {
+      // ✅ إذا interceptor شتغل — يرمي TecSdkError
+      if (err instanceof TecSdkError) throw err;
+
+      // ✅ إذا الـ mock رمى object عادي (axios error shape)
+      const anyErr = err as Record<string, unknown>;
+      const status =
+        (anyErr?.response as Record<string, unknown>)?.status as number ?? 500;
+      const message =
+        ((anyErr?.response as Record<string, unknown>)?.data as Record<string, unknown>)
+          ?.message as string ?? String(anyErr?.message ?? 'Request failed');
+
+      throw new TecSdkError(status, message, err);
     }
-    throw new Error('Unreachable');
+
+    // ✅ Zod validation — يرمي error إذا data ناقصة
+    const response = LoginResponseSchema.parse(raw);
+
+    this.setToken(response.tokens.accessToken);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tec_refresh_token', response.tokens.refreshToken);
+      localStorage.setItem('tec_user', JSON.stringify(response.user));
+    }
+
+    return response;
   }
 
-  async getBalance(userId: string): Promise<WalletBalance> {
-    return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/wallets/${userId}/balance`);
-      return WalletBalanceSchema.parse(res);
-    });
+  async refreshToken(): Promise<{ token: string }> {
+    const refreshToken =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('tec_refresh_token')
+        : null;
+
+    if (!refreshToken) throw new TecSdkError(401, 'No refresh token found');
+
+    const res = await this.post<{ success: boolean; token: string }>(
+      '/api/auth/refresh',
+      { refreshToken },
+    );
+
+    this.setToken(res.token);
+    return res;
   }
 
-  async creditWallet(
-    userId: string,
-    amount: number,
-    referenceId: string,
-  ): Promise<WalletTransaction> {
-    return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/wallets/${userId}/credit`, {
-        amount,
-        referenceId,
-      });
-      return WalletTransactionSchema.parse(res);
-    });
+  async getProfile(): Promise<AuthUser> {
+    const res = await this.get<unknown>('/api/auth/me');
+    return AuthUserSchema.parse(res);
   }
 
-  async debitWallet(
-    userId: string,
-    amount: number,
-    referenceId: string,
-  ): Promise<WalletTransaction> {
-    return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/wallets/${userId}/debit`, {
-        amount,
-        referenceId,
-      });
-      return WalletTransactionSchema.parse(res);
-    });
+  async health(): Promise<{ status: string }> {
+    return this.get('/api/auth/health');
   }
 
-  async getTransactions(userId: string): Promise<WalletTransaction[]> {
-    return this.withRetry(async () => {
-      const res = await this.get<unknown[]>(`/wallets/${userId}/transactions`);
-      return z.array(WalletTransactionSchema).parse(res);
-    });
+  logout(): void {
+    this.clearToken();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('tec_refresh_token');
+      localStorage.removeItem('tec_user');
+    }
   }
 }
