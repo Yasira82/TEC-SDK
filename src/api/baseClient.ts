@@ -7,13 +7,15 @@ import { z } from 'zod';
 import { logger } from '../utils/logger';
 
 export class TecSdkError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-    public readonly original?: unknown,
-  ) {
+  public readonly status: number;
+  public readonly original: unknown;
+
+  constructor(status: number, message: string, original?: unknown) {
     super(message);
     this.name = 'TecSdkError';
+    this.status = status;
+    this.original = original;
+    Object.setPrototypeOf(this, TecSdkError.prototype);
   }
 }
 
@@ -54,7 +56,7 @@ export abstract class BaseClient {
       (error: AxiosError) => {
         const data = error.response?.data as Record<string, unknown> | undefined;
         const errMsg =
-          (data?.error as Record<string, unknown>)?.message as string ||
+          ((data?.error as Record<string, unknown>)?.message as string) ||
           (data?.message as string) ||
           error.message ||
           'Unknown error';
@@ -62,7 +64,6 @@ export abstract class BaseClient {
 
         logger.error({ status, message: errMsg }, '[TEC SDK] Request failed');
 
-        // ✅ Throw TecSdkError — يجعل rejects.toThrow() يشتغل
         return Promise.reject(new TecSdkError(status, errMsg, error));
       },
     );
