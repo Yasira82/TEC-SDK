@@ -39,10 +39,15 @@ export class TecSdk {
   }
 }
 
-// ✅ Exports
+// ─── API Clients ─────────────────────────────────────────
 export * from './api/authClient';
 export * from './api/walletClient';
 export * from './api/paymentClient';
 export * from './api/assetClient';
 export * from './api/healthClient';
+
+// ─── Base & Errors ───────────────────────────────────────
+export { BaseClient, TecSdkError } from './api/baseClient';
+
+// ─── Logger ──────────────────────────────────────────────
 export { logger, logInfo, logWarn, logError } from './utils/logger';
