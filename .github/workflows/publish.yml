@@ -17,7 +17,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install  # ✅ بدل npm ci
+        run: npm install
 
       - name: Zero-Width Character Scan
         run: |
@@ -31,12 +31,12 @@ jobs:
               if (f.isDirectory() && !['node_modules','dist'].includes(f.name)) scan(full);
               else if (f.name.endsWith('.ts')) {
                 const content = fs.readFileSync(full, 'utf-8');
-                if (ZWC.test(content)) { console.error('ZWC found in: ' + full); process.exit(1); }
+                if (ZWC.test(content)) { console.error('ZWC found: ' + full); process.exit(1); }
               }
             }
           }
           scan('./src');
-          console.log('Clean — no zero-width chars found.');
+          console.log('✅ Clean — no zero-width chars.');
           "
 
   test-and-publish:
@@ -52,7 +52,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: npm install  # ✅ بدل npm ci
+        run: npm install
 
       - name: Run Tests
         run: npm test
