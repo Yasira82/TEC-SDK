@@ -28,7 +28,8 @@ export const PaymentSchema = z.object({
   ),
 });
 
-export type Payment = z.infer<typeof PaymentSchema>;
+// ✅ الحل: استخدام z.output بدل z.infer — يعكس الـ type بعد الـ default
+export type Payment = z.output<typeof PaymentSchema>;
 
 export class PaymentClient extends BaseClient {
   constructor(baseURL: string, apiKey?: string) {
@@ -105,4 +106,4 @@ export class PaymentClient extends BaseClient {
       this.post('/payments/resolve-incomplete', { piPaymentId }, PaymentSchema),
     );
   }
-}
+  }
