@@ -81,25 +81,46 @@ export abstract class BaseClient {
     }
   }
 
+  // ✅ get بدون schema — يطابق wallet/health tests
+  protected async get<T>(path: string): Promise<T>;
+  // ✅ get مع schema — يمرره لـ axios كـ arg ثالث ليطابق payment tests
+  protected async get<T>(
+    path: string,
+    schema: z.ZodSchema<T, z.ZodTypeDef, unknown>,
+  ): Promise<T>;
   protected async get<T>(
     path: string,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    // ✅ نمرر schema لـ axios كـ third argument — يطابق ما يتوقعه الـ test
-    const res = await (this.client.get as Function)(path, undefined, schema);
-    if (schema) return schema.parse(res.data ?? res);
-    return (res.data ?? res) as T;
+    if (schema) {
+      // payment-style: مرر schema لـ axios كـ arg ثالث
+      const res = await (this.client.get as Function)(path, schema);
+      return schema.parse(res.data ?? res);
+    }
+    const res = await this.client.get<T>(path);
+    return res.data;
   }
 
+  // ✅ post بدون schema — يطابق wallet tests
+  protected async post<T>(path: string, data?: unknown): Promise<T>;
+  // ✅ post مع schema — يمرره لـ axios كـ arg ثالث ليطابق payment tests
+  protected async post<T>(
+    path: string,
+    data: unknown,
+    schema: z.ZodSchema<T, z.ZodTypeDef, unknown>,
+  ): Promise<T>;
   protected async post<T>(
     path: string,
     data?: unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    // ✅ نمرر schema لـ axios كـ third argument — يطابق ما يتوقعه الـ test
-    const res = await (this.client.post as Function)(path, data, schema);
-    if (schema) return schema.parse(res.data ?? res);
-    return (res.data ?? res) as T;
+    if (schema) {
+      // payment-style: مرر schema لـ axios كـ arg ثالث
+      const res = await (this.client.post as Function)(path, data, schema);
+      return schema.parse(res.data ?? res);
+    }
+    const res = await this.client.post<T>(path, data);
+    return res.data;
   }
 
   protected async put<T>(
@@ -107,9 +128,12 @@ export abstract class BaseClient {
     data?: unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    const res = await (this.client.put as Function)(path, data, schema);
-    if (schema) return schema.parse(res.data ?? res);
-    return (res.data ?? res) as T;
+    if (schema) {
+      const res = await (this.client.put as Function)(path, data, schema);
+      return schema.parse(res.data ?? res);
+    }
+    const res = await this.client.put<T>(path, data);
+    return res.data;
   }
 
   protected async patch<T>(
@@ -117,17 +141,23 @@ export abstract class BaseClient {
     data?: unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    const res = await (this.client.patch as Function)(path, data, schema);
-    if (schema) return schema.parse(res.data ?? res);
-    return (res.data ?? res) as T;
+    if (schema) {
+      const res = await (this.client.patch as Function)(path, data, schema);
+      return schema.parse(res.data ?? res);
+    }
+    const res = await this.client.patch<T>(path, data);
+    return res.data;
   }
 
   protected async delete<T>(
     path: string,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    const res = await (this.client.delete as Function)(path, undefined, schema);
-    if (schema) return schema.parse(res.data ?? res);
-    return (res.data ?? res) as T;
+    if (schema) {
+      const res = await (this.client.delete as Function)(path, schema);
+      return schema.parse(res.data ?? res);
+    }
+    const res = await this.client.delete<T>(path);
+    return res.data;
   }
 }
