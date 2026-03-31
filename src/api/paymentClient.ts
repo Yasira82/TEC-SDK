@@ -79,12 +79,15 @@ export class PaymentClient extends BaseClient {
     );
   }
 
+  // ✅ get بدون schema — parse يدوي
   async getPayment(paymentId: string): Promise<Payment> {
-    return this.withRetry(() =>
-      this.get(`/payments/${paymentId}`, PaymentSchema),
-    );
+    return this.withRetry(async () => {
+      const res = await this.get<unknown>(`/payments/${paymentId}`);
+      return PaymentSchema.parse(res);
+    });
   }
 
+  // ✅ get بدون schema — parse يدوي
   async listUserPayments(userId: string): Promise<Payment[]> {
     return this.withRetry(async () => {
       const res = await this.get<unknown[]>(`/payments/user/${userId}`);
