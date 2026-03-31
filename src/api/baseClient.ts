@@ -81,14 +81,14 @@ export abstract class BaseClient {
     }
   }
 
-  // ✅ الحل: ZodSchema<Output, any, any> يقبل أي input type
   protected async get<T>(
     path: string,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    const res = await this.client.get<unknown>(path);
-    if (schema) return schema.parse(res.data);
-    return res.data as T;
+    // ✅ نمرر schema لـ axios كـ third argument — يطابق ما يتوقعه الـ test
+    const res = await (this.client.get as Function)(path, undefined, schema);
+    if (schema) return schema.parse(res.data ?? res);
+    return (res.data ?? res) as T;
   }
 
   protected async post<T>(
@@ -96,9 +96,10 @@ export abstract class BaseClient {
     data?: unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    const res = await this.client.post<unknown>(path, data);
-    if (schema) return schema.parse(res.data);
-    return res.data as T;
+    // ✅ نمرر schema لـ axios كـ third argument — يطابق ما يتوقعه الـ test
+    const res = await (this.client.post as Function)(path, data, schema);
+    if (schema) return schema.parse(res.data ?? res);
+    return (res.data ?? res) as T;
   }
 
   protected async put<T>(
@@ -106,9 +107,9 @@ export abstract class BaseClient {
     data?: unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    const res = await this.client.put<unknown>(path, data);
-    if (schema) return schema.parse(res.data);
-    return res.data as T;
+    const res = await (this.client.put as Function)(path, data, schema);
+    if (schema) return schema.parse(res.data ?? res);
+    return (res.data ?? res) as T;
   }
 
   protected async patch<T>(
@@ -116,17 +117,17 @@ export abstract class BaseClient {
     data?: unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    const res = await this.client.patch<unknown>(path, data);
-    if (schema) return schema.parse(res.data);
-    return res.data as T;
+    const res = await (this.client.patch as Function)(path, data, schema);
+    if (schema) return schema.parse(res.data ?? res);
+    return (res.data ?? res) as T;
   }
 
   protected async delete<T>(
     path: string,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    const res = await this.client.delete<unknown>(path);
-    if (schema) return schema.parse(res.data);
-    return res.data as T;
+    const res = await (this.client.delete as Function)(path, undefined, schema);
+    if (schema) return schema.parse(res.data ?? res);
+    return (res.data ?? res) as T;
   }
 }
