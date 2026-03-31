@@ -1,9 +1,9 @@
 import { BaseClient } from './baseClient';
 import { z } from 'zod';
 
-const dateOrNull = z.string().nullable().optional().transform((v) =>
-  v ? new Date(v) : null,
-);
+const dateOrNull = z
+  .union([z.string(), z.null()])
+  .transform((v) => (v ? new Date(v) : null));
 
 export const PaymentSchema = z.object({
   paymentId: z.string(),
@@ -16,8 +16,8 @@ export const PaymentSchema = z.object({
   metadata: z.record(z.any()).optional(),
   createdAt: dateOrNull,
   updatedAt: dateOrNull,
-  approvedAt: dateOrNull,
-  completedAt: dateOrNull,
+  approvedAt: dateOrNull.optional(),
+  completedAt: dateOrNull.optional(),
 });
 
 export type Payment = z.infer<typeof PaymentSchema>;
