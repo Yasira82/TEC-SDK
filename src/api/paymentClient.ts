@@ -5,7 +5,7 @@ export const PaymentSchema = z.object({
   paymentId: z.string(),
   userId: z.string(),
   amount: z.number(),
-  currency: z.string().default('PI'),
+  currency: z.string(),
   status: z.enum(['created', 'approved', 'completed', 'failed', 'cancelled']),
   piPaymentId: z.string().nullable().optional(),
   transactionId: z.string().nullable().optional(),
@@ -28,8 +28,7 @@ export const PaymentSchema = z.object({
   ),
 });
 
-// ✅ الحل: استخدام z.output بدل z.infer — يعكس الـ type بعد الـ default
-export type Payment = z.output<typeof PaymentSchema>;
+export type Payment = z.infer<typeof PaymentSchema>;
 
 export class PaymentClient extends BaseClient {
   constructor(baseURL: string, apiKey?: string) {
@@ -106,4 +105,4 @@ export class PaymentClient extends BaseClient {
       this.post('/payments/resolve-incomplete', { piPaymentId }, PaymentSchema),
     );
   }
-  }
+                              }
