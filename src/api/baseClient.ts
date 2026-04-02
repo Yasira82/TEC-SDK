@@ -5,6 +5,7 @@ import axios, {
 } from 'axios';
 import { z } from 'zod';
 import { logger } from '../utils/logger';
+import { TokenStore, createTokenStore } from '../core/token-store';
 
 export class TecSdkError extends Error {
   public readonly status: number;
@@ -19,23 +20,21 @@ export class TecSdkError extends Error {
   }
 }
 
-// ✅ بدل Function — نعرّف type صريح
-type AxiosCallWithSchema = (
-  path: string,
-  dataOrSchema?: unknown,
-  schema?: unknown,
-) => Promise<{ data: unknown }>;
-
 export abstract class BaseClient {
   protected client: AxiosInstance;
+  protected readonly tokens: TokenStore;
 
   constructor(
     protected baseURL: string,
     protected apiKey?: string,
+    tokenStore?: TokenStore,
   ) {
     if (this.baseURL.endsWith('/')) {
       this.baseURL = this.baseURL.slice(0, -1);
     }
+
+    // Use injected store (for tests / SSR) or auto-detect
+    this.tokens = tokenStore ?? createTokenStore();
 
     this.client = axios.create({
       baseURL: this.baseURL,
@@ -46,18 +45,18 @@ export abstract class BaseClient {
       timeout: 15000,
     });
 
+    // ─── Request interceptor — attach Bearer token ────────────
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        if (typeof window !== 'undefined') {
-          const token = localStorage.getItem('tec_token');
-          if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
-          }
+        const token = this.tokens.get('tec_token');
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
     );
 
+    // ─── Response interceptor — normalise errors ──────────────
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
@@ -74,20 +73,18 @@ export abstract class BaseClient {
     );
   }
 
+  // ─── Token helpers ────────────────────────────────────────────
   setToken(token: string): void {
     this.client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('tec_token', token);
-    }
+    this.tokens.set('tec_token', token);
   }
 
   clearToken(): void {
     delete this.client.defaults.headers.common['Authorization'];
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('tec_token');
-    }
+    this.tokens.remove('tec_token');
   }
 
+  // ─── HTTP methods ─────────────────────────────────────────────
   protected async get<T>(path: string): Promise<T>;
   protected async get<T>(
     path: string,
@@ -97,13 +94,8 @@ export abstract class BaseClient {
     path: string,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    if (schema) {
-      const caller = this.client.get as unknown as AxiosCallWithSchema;
-      const res = await caller(path, schema);
-      return schema.parse(res.data ?? res);
-    }
     const res = await this.client.get<T>(path);
-    return res.data;
+    return schema ? schema.parse(res.data) : res.data;
   }
 
   protected async post<T>(path: string, data?: unknown): Promise<T>;
@@ -117,13 +109,8 @@ export abstract class BaseClient {
     data?: unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    if (schema) {
-      const caller = this.client.post as unknown as AxiosCallWithSchema;
-      const res = await caller(path, data, schema);
-      return schema.parse(res.data ?? res);
-    }
     const res = await this.client.post<T>(path, data);
-    return res.data;
+    return schema ? schema.parse(res.data) : res.data;
   }
 
   protected async put<T>(
@@ -131,13 +118,8 @@ export abstract class BaseClient {
     data?: unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    if (schema) {
-      const caller = this.client.put as unknown as AxiosCallWithSchema;
-      const res = await caller(path, data, schema);
-      return schema.parse(res.data ?? res);
-    }
     const res = await this.client.put<T>(path, data);
-    return res.data;
+    return schema ? schema.parse(res.data) : res.data;
   }
 
   protected async patch<T>(
@@ -145,25 +127,15 @@ export abstract class BaseClient {
     data?: unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    if (schema) {
-      const caller = this.client.patch as unknown as AxiosCallWithSchema;
-      const res = await caller(path, data, schema);
-      return schema.parse(res.data ?? res);
-    }
     const res = await this.client.patch<T>(path, data);
-    return res.data;
+    return schema ? schema.parse(res.data) : res.data;
   }
 
   protected async delete<T>(
     path: string,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
-    if (schema) {
-      const caller = this.client.delete as unknown as AxiosCallWithSchema;
-      const res = await caller(path, schema);
-      return schema.parse(res.data ?? res);
-    }
     const res = await this.client.delete<T>(path);
-    return res.data;
+    return schema ? schema.parse(res.data) : res.data;
   }
-  }
+    }
