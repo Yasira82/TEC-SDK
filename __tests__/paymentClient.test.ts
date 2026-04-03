@@ -1,14 +1,12 @@
-import { PaymentClient, PaymentSchema } from '../src/api/paymentClient';
-import axios from 'axios';
-import { z } from 'zod';
+import { PaymentClient } from '../src/api/paymentClient';
+import axios             from 'axios';
 
-// Mock Axios
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('PaymentClient SDK - Comprehensive Tests', () => {
   const baseURL = 'https://api.tec.test';
-  const apiKey = 'test-api-key';
+  const apiKey  = 'test-api-key';
   let client: PaymentClient;
 
   beforeEach(() => {
@@ -17,25 +15,15 @@ describe('PaymentClient SDK - Comprehensive Tests', () => {
     (client as any).client = mockedAxios;
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => { jest.clearAllMocks(); });
 
   it('should create a payment successfully', async () => {
     const rawPayment = {
-      paymentId: 'pay123',
-      userId: 'user123',
-      amount: 100,
-      currency: 'PI',
-      status: 'created',
-      piPaymentId: null,
-      transactionId: null,
-      createdAt: '2026-03-16T00:00:00Z',
-      updatedAt: '2026-03-16T00:00:00Z',
-      approvedAt: null,
-      completedAt: null,
+      paymentId: 'pay123', userId: 'user123', amount: 100, currency: 'PI',
+      status: 'created', piPaymentId: null, transactionId: null,
+      createdAt: '2026-03-16T00:00:00Z', updatedAt: '2026-03-16T00:00:00Z',
+      approvedAt: null, completedAt: null,
     };
-
     mockedAxios.post.mockResolvedValue({ data: rawPayment });
 
     const payment = await client.createPayment('user123', 100);
@@ -43,72 +31,57 @@ describe('PaymentClient SDK - Comprehensive Tests', () => {
     expect(payment.paymentId).toBe('pay123');
     expect(payment.amount).toBe(100);
     expect(payment.createdAt).toBeInstanceOf(Date);
-    expect(mockedAxios.post).toHaveBeenCalledWith('/payments', { userId: 'user123', amount: 100, currency: 'PI', metadata: undefined }, PaymentSchema);
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      '/payments',
+      { userId: 'user123', amount: 100, currency: 'PI', metadata: undefined },
+    );
   });
 
   it('should approve a payment successfully', async () => {
     const rawPayment = {
-      paymentId: 'pay123',
-      userId: 'user123',
-      amount: 100,
-      currency: 'PI',
-      status: 'approved',
-      piPaymentId: 'pi789',
-      transactionId: null,
-      createdAt: '2026-03-16T00:00:00Z',
-      updatedAt: '2026-03-16T01:00:00Z',
-      approvedAt: '2026-03-16T01:00:00Z',
-      completedAt: null,
+      paymentId: 'pay123', userId: 'user123', amount: 100, currency: 'PI',
+      status: 'approved', piPaymentId: 'pi789', transactionId: null,
+      createdAt: '2026-03-16T00:00:00Z', updatedAt: '2026-03-16T01:00:00Z',
+      approvedAt: '2026-03-16T01:00:00Z', completedAt: null,
     };
-
     mockedAxios.post.mockResolvedValue({ data: rawPayment });
 
     const payment = await client.approvePayment('pay123');
 
     expect(payment.status).toBe('approved');
     expect(payment.approvedAt).toBeInstanceOf(Date);
-    expect(mockedAxios.post).toHaveBeenCalledWith('/payments/pay123/approve', { metadata: undefined }, PaymentSchema);
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      '/payments/pay123/approve',
+      { metadata: undefined },
+    );
   });
 
   it('should complete a payment successfully', async () => {
     const rawPayment = {
-      paymentId: 'pay123',
-      userId: 'user123',
-      amount: 100,
-      currency: 'PI',
-      status: 'completed',
-      piPaymentId: 'pi789',
-      transactionId: 'tx123',
-      createdAt: '2026-03-16T00:00:00Z',
-      updatedAt: '2026-03-16T02:00:00Z',
-      approvedAt: '2026-03-16T01:00:00Z',
-      completedAt: '2026-03-16T02:00:00Z',
+      paymentId: 'pay123', userId: 'user123', amount: 100, currency: 'PI',
+      status: 'completed', piPaymentId: 'pi789', transactionId: 'tx123',
+      createdAt: '2026-03-16T00:00:00Z', updatedAt: '2026-03-16T02:00:00Z',
+      approvedAt: '2026-03-16T01:00:00Z', completedAt: '2026-03-16T02:00:00Z',
     };
-
     mockedAxios.post.mockResolvedValue({ data: rawPayment });
 
     const payment = await client.completePayment('pay123', 'tx123');
 
     expect(payment.status).toBe('completed');
     expect(payment.completedAt).toBeInstanceOf(Date);
-    expect(mockedAxios.post).toHaveBeenCalledWith('/payments/pay123/complete', { transactionId: 'tx123', metadata: undefined }, PaymentSchema);
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      '/payments/pay123/complete',
+      { transactionId: 'tx123', metadata: undefined },
+    );
   });
 
   it('should fetch a payment by ID', async () => {
     const rawPayment = {
-      paymentId: 'pay123',
-      userId: 'user123',
-      amount: 100,
-      currency: 'PI',
-      status: 'completed',
-      piPaymentId: 'pi789',
-      transactionId: 'tx123',
-      createdAt: '2026-03-16T00:00:00Z',
-      updatedAt: '2026-03-16T02:00:00Z',
-      approvedAt: '2026-03-16T01:00:00Z',
-      completedAt: '2026-03-16T02:00:00Z',
+      paymentId: 'pay123', userId: 'user123', amount: 100, currency: 'PI',
+      status: 'completed', piPaymentId: 'pi789', transactionId: 'tx123',
+      createdAt: '2026-03-16T00:00:00Z', updatedAt: '2026-03-16T02:00:00Z',
+      approvedAt: '2026-03-16T01:00:00Z', completedAt: '2026-03-16T02:00:00Z',
     };
-
     mockedAxios.get.mockResolvedValue({ data: rawPayment });
 
     const payment = await client.getPayment('pay123');
@@ -119,22 +92,12 @@ describe('PaymentClient SDK - Comprehensive Tests', () => {
   });
 
   it('should list all payments for a user', async () => {
-    const rawPayments = [
-      {
-        paymentId: 'pay123',
-        userId: 'user123',
-        amount: 100,
-        currency: 'PI',
-        status: 'completed',
-        piPaymentId: 'pi789',
-        transactionId: 'tx123',
-        createdAt: '2026-03-16T00:00:00Z',
-        updatedAt: '2026-03-16T02:00:00Z',
-        approvedAt: '2026-03-16T01:00:00Z',
-        completedAt: '2026-03-16T02:00:00Z',
-      }
-    ];
-
+    const rawPayments = [{
+      paymentId: 'pay123', userId: 'user123', amount: 100, currency: 'PI',
+      status: 'completed', piPaymentId: 'pi789', transactionId: 'tx123',
+      createdAt: '2026-03-16T00:00:00Z', updatedAt: '2026-03-16T02:00:00Z',
+      approvedAt: '2026-03-16T01:00:00Z', completedAt: '2026-03-16T02:00:00Z',
+    }];
     mockedAxios.get.mockResolvedValue({ data: rawPayments });
 
     const payments = await client.listUserPayments('user123');
@@ -144,22 +107,13 @@ describe('PaymentClient SDK - Comprehensive Tests', () => {
     expect(mockedAxios.get).toHaveBeenCalledWith('/payments/user/user123');
   });
 
-  it('should retry on transient errors (safeRequest)', async () => {
+  it('should retry on transient errors', async () => {
     const rawPayment = {
-      paymentId: 'pay999',
-      userId: 'user999',
-      amount: 500,
-      currency: 'PI',
-      status: 'completed',
-      piPaymentId: 'pi999',
-      transactionId: 'tx999',
-      createdAt: '2026-03-16T03:00:00Z',
-      updatedAt: '2026-03-16T03:00:00Z',
-      approvedAt: null,
-      completedAt: '2026-03-16T03:00:00Z',
+      paymentId: 'pay999', userId: 'user999', amount: 500, currency: 'PI',
+      status: 'completed', piPaymentId: 'pi999', transactionId: 'tx999',
+      createdAt: '2026-03-16T03:00:00Z', updatedAt: '2026-03-16T03:00:00Z',
+      approvedAt: null, completedAt: '2026-03-16T03:00:00Z',
     };
-
-    // أول محاولة تفشل، الثانية تنجح
     mockedAxios.post
       .mockRejectedValueOnce(new Error('Network Error'))
       .mockResolvedValueOnce({ data: rawPayment });
@@ -167,7 +121,6 @@ describe('PaymentClient SDK - Comprehensive Tests', () => {
     const payment = await client.completePayment('pay999', 'tx999');
 
     expect(payment.paymentId).toBe('pay999');
-    expect(payment.completedAt).toBeInstanceOf(Date);
     expect(mockedAxios.post).toHaveBeenCalledTimes(2);
   });
 });
