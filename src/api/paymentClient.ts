@@ -1,23 +1,23 @@
 import { BaseClient } from './baseClient';
-import { z } from 'zod';
+import { z }          from 'zod';
 
 const dateOrNull = z
   .union([z.string(), z.null()])
   .transform((v) => (v ? new Date(v) : null));
 
 export const PaymentSchema = z.object({
-  paymentId: z.string(),
-  userId: z.string(),
-  amount: z.number(),
-  currency: z.string(),
-  status: z.enum(['created', 'approved', 'completed', 'failed', 'cancelled']),
-  piPaymentId: z.string().nullable().optional(),
+  paymentId:     z.string(),
+  userId:        z.string(),
+  amount:        z.number(),
+  currency:      z.string(),
+  status:        z.enum(['created', 'approved', 'completed', 'failed', 'cancelled']),
+  piPaymentId:   z.string().nullable().optional(),
   transactionId: z.string().nullable().optional(),
-  metadata: z.record(z.any()).optional(),
-  createdAt: dateOrNull,
-  updatedAt: dateOrNull,
-  approvedAt: dateOrNull.optional(),
-  completedAt: dateOrNull.optional(),
+  metadata:      z.record(z.any()).optional(),
+  createdAt:     dateOrNull,
+  updatedAt:     dateOrNull,
+  approvedAt:    dateOrNull.optional(),
+  completedAt:   dateOrNull.optional(),
 });
 
 export type Payment = z.infer<typeof PaymentSchema>;
@@ -27,21 +27,9 @@ export class PaymentClient extends BaseClient {
     super(baseURL, apiKey);
   }
 
-  private async withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
-    for (let i = 1; i <= retries; i++) {
-      try {
-        return await fn();
-      } catch (err: unknown) {
-        if (i === retries) throw err;
-        await new Promise((r) => setTimeout(r, 500 * Math.pow(2, i - 1)));
-      }
-    }
-    throw new Error('Unreachable');
-  }
-
   async createPayment(
-    userId: string,
-    amount: number,
+    userId:    string,
+    amount:    number,
     currency = 'PI',
     metadata?: Record<string, unknown>,
   ): Promise<Payment> {
@@ -60,9 +48,9 @@ export class PaymentClient extends BaseClient {
   }
 
   async completePayment(
-    paymentId: string,
+    paymentId:     string,
     transactionId: string,
-    metadata?: Record<string, unknown>,
+    metadata?:     Record<string, unknown>,
   ): Promise<Payment> {
     return this.withRetry(() =>
       this.post(
@@ -79,7 +67,6 @@ export class PaymentClient extends BaseClient {
     );
   }
 
-  // ✅ get بدون schema — parse يدوي
   async getPayment(paymentId: string): Promise<Payment> {
     return this.withRetry(async () => {
       const res = await this.get<unknown>(`/payments/${paymentId}`);
@@ -87,7 +74,6 @@ export class PaymentClient extends BaseClient {
     });
   }
 
-  // ✅ get بدون schema — parse يدوي
   async listUserPayments(userId: string): Promise<Payment[]> {
     return this.withRetry(async () => {
       const res = await this.get<unknown[]>(`/payments/user/${userId}`);
