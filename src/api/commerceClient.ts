@@ -1,116 +1,82 @@
 import { BaseClient } from './baseClient';
-import { z } from 'zod';
-
-// ─── Schemas ─────────────────────────────────────────────────
+import { z }          from 'zod';
 
 export const ProductSchema = z.object({
-  id: z.string(),
-  name: z.string(),
+  id:          z.string(),
+  name:        z.string(),
   description: z.string().optional(),
-  price: z.number(),
-  currency: z.string().default('PI'),
-  category: z.string().optional(),
-  stock: z.number().optional(),
-  isActive: z.boolean().default(true),
-  sellerId: z.string(),
-  metadata: z.record(z.unknown()).optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  price:       z.number(),
+  currency:    z.string().default('PI'),
+  category:    z.string().optional(),
+  stock:       z.number().optional(),
+  isActive:    z.boolean().default(true),
+  sellerId:    z.string(),
+  metadata:    z.record(z.unknown()).optional(),
+  createdAt:   z.string(),
+  updatedAt:   z.string(),
 });
 
 export const OrderItemSchema = z.object({
-  productId: z.string(),
-  quantity: z.number().int().positive(),
-  unitPrice: z.number(),
+  productId:  z.string(),
+  quantity:   z.number().int().positive(),
+  unitPrice:  z.number(),
   totalPrice: z.number(),
 });
 
 export const OrderSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  status: z.enum([
-    'pending',
-    'confirmed',
-    'processing',
-    'shipped',
-    'delivered',
-    'cancelled',
-    'refunded',
-  ]),
-  items: z.array(OrderItemSchema),
+  id:          z.string(),
+  userId:      z.string(),
+  status:      z.enum(['pending','confirmed','processing','shipped','delivered','cancelled','refunded']),
+  items:       z.array(OrderItemSchema),
   totalAmount: z.number(),
-  currency: z.string().default('PI'),
-  paymentId: z.string().nullable().optional(),
-  metadata: z.record(z.unknown()).optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  currency:    z.string().default('PI'),
+  paymentId:   z.string().nullable().optional(),
+  metadata:    z.record(z.unknown()).optional(),
+  createdAt:   z.string(),
+  updatedAt:   z.string(),
 });
 
 export const SubscriptionSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  planId: z.string(),
-  planName: z.string(),
-  status: z.enum(['active', 'cancelled', 'expired', 'paused']),
-  price: z.number(),
-  currency: z.string().default('PI'),
-  interval: z.enum(['monthly', 'yearly']),
+  id:        z.string(),
+  userId:    z.string(),
+  planId:    z.string(),
+  planName:  z.string(),
+  status:    z.enum(['active','cancelled','expired','paused']),
+  price:     z.number(),
+  currency:  z.string().default('PI'),
+  interval:  z.enum(['monthly','yearly']),
   startDate: z.string(),
-  endDate: z.string().nullable().optional(),
+  endDate:   z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 
 export const CreateOrderSchema = z.object({
-  items: z.array(
-    z.object({
-      productId: z.string(),
-      quantity: z.number().int().positive(),
-    }),
-  ),
+  items: z.array(z.object({
+    productId: z.string(),
+    quantity:  z.number().int().positive(),
+  })),
   metadata: z.record(z.unknown()).optional(),
 });
 
-export type Product = z.infer<typeof ProductSchema>;
-export type Order = z.infer<typeof OrderSchema>;
-export type OrderItem = z.infer<typeof OrderItemSchema>;
-export type Subscription = z.infer<typeof SubscriptionSchema>;
+export type Product       = z.infer<typeof ProductSchema>;
+export type Order         = z.infer<typeof OrderSchema>;
+export type OrderItem     = z.infer<typeof OrderItemSchema>;
+export type Subscription  = z.infer<typeof SubscriptionSchema>;
 export type CreateOrderDto = z.infer<typeof CreateOrderSchema>;
-
-// ─── Client ──────────────────────────────────────────────────
 
 export class CommerceClient extends BaseClient {
   constructor(baseURL: string, apiKey?: string) {
     super(baseURL, apiKey);
   }
 
-  private async withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
-    for (let i = 1; i <= retries; i++) {
-      try {
-        return await fn();
-      } catch (err: unknown) {
-        if (i === retries) throw err;
-        await new Promise((r) => setTimeout(r, 500 * Math.pow(2, i - 1)));
-      }
-    }
-    throw new Error('Unreachable');
-  }
-
-  // ─── Products ──────────────────────────────────────────────
-
-  async getProducts(params?: {
-    category?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<Product[]> {
+  async getProducts(params?: { category?: string; page?: number; limit?: number }): Promise<Product[]> {
     return this.withRetry(async () => {
       const query = new URLSearchParams();
       if (params?.category) query.set('category', params.category);
-      if (params?.page) query.set('page', String(params.page));
-      if (params?.limit) query.set('limit', String(params.limit));
-      const res = await this.get<unknown>(
-        `/api/commerce/products?${query.toString()}`,
-      );
+      if (params?.page)     query.set('page',     String(params.page));
+      if (params?.limit)    query.set('limit',    String(params.limit));
+      const res = await this.get<unknown>(`/api/commerce/products?${query.toString()}`);
       return z.array(ProductSchema).parse(res);
     });
   }
@@ -122,21 +88,17 @@ export class CommerceClient extends BaseClient {
     });
   }
 
-  async createProduct(
-    data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>,
-  ): Promise<Product> {
+  async createProduct(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
     return this.withRetry(async () => {
       const res = await this.post<unknown>('/api/commerce/products', data);
       return ProductSchema.parse(res);
     });
   }
 
-  // ─── Orders ────────────────────────────────────────────────
-
   async createOrder(data: CreateOrderDto): Promise<Order> {
     return this.withRetry(async () => {
       const parsed = CreateOrderSchema.parse(data);
-      const res = await this.post<unknown>('/api/commerce/orders', parsed);
+      const res    = await this.post<unknown>('/api/commerce/orders', parsed);
       return OrderSchema.parse(res);
     });
   }
@@ -157,49 +119,31 @@ export class CommerceClient extends BaseClient {
 
   async cancelOrder(orderId: string): Promise<Order> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(
-        `/api/commerce/orders/${orderId}/cancel`,
-        {},
-      );
+      const res = await this.post<unknown>(`/api/commerce/orders/${orderId}/cancel`, {});
       return OrderSchema.parse(res);
     });
   }
 
-  // ─── Subscriptions ─────────────────────────────────────────
-
   async getSubscription(userId: string): Promise<Subscription | null> {
     return this.withRetry(async () => {
       try {
-        const res = await this.get<unknown>(
-          `/api/commerce/subscriptions/user/${userId}`,
-        );
+        const res = await this.get<unknown>(`/api/commerce/subscriptions/user/${userId}`);
         return SubscriptionSchema.parse(res);
-      } catch {
-        return null;
-      }
+      } catch { return null; }
     });
   }
 
-  async createSubscription(data: {
-    planId: string;
-    interval: 'monthly' | 'yearly';
-  }): Promise<Subscription> {
+  async createSubscription(data: { planId: string; interval: 'monthly' | 'yearly' }): Promise<Subscription> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(
-        '/api/commerce/subscriptions',
-        data,
-      );
+      const res = await this.post<unknown>('/api/commerce/subscriptions', data);
       return SubscriptionSchema.parse(res);
     });
   }
 
   async cancelSubscription(subscriptionId: string): Promise<Subscription> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(
-        `/api/commerce/subscriptions/${subscriptionId}/cancel`,
-        {},
-      );
+      const res = await this.post<unknown>(`/api/commerce/subscriptions/${subscriptionId}/cancel`, {});
       return SubscriptionSchema.parse(res);
     });
   }
-        }
+}
