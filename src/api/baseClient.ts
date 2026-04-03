@@ -3,18 +3,18 @@ import axios, {
   InternalAxiosRequestConfig,
   AxiosError,
 } from 'axios';
-import { z } from 'zod';
-import { logger } from '../utils/logger';
-import { TokenStore, createTokenStore } from '../core/token-store';
+import { z }                              from 'zod';
+import { logger }                         from '../utils/logger';
+import { TokenStore, createTokenStore }   from '../core/token-store';
 
 export class TecSdkError extends Error {
-  public readonly status: number;
+  public readonly status:   number;
   public readonly original: unknown;
 
   constructor(status: number, message: string, original?: unknown) {
     super(message);
-    this.name = 'TecSdkError';
-    this.status = status;
+    this.name     = 'TecSdkError';
+    this.status   = status;
     this.original = original;
     Object.setPrototypeOf(this, TecSdkError.prototype);
   }
@@ -25,15 +25,14 @@ export abstract class BaseClient {
   protected readonly tokens: TokenStore;
 
   constructor(
-    protected baseURL: string,
-    protected apiKey?: string,
-    tokenStore?: TokenStore,
+    protected baseURL:  string,
+    protected apiKey?:  string,
+    tokenStore?:        TokenStore,
   ) {
     if (this.baseURL.endsWith('/')) {
       this.baseURL = this.baseURL.slice(0, -1);
     }
 
-    // Use injected store (for tests / SSR) or auto-detect
     this.tokens = tokenStore ?? createTokenStore();
 
     this.client = axios.create({
@@ -60,7 +59,7 @@ export abstract class BaseClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
-        const data = error.response?.data as Record<string, unknown> | undefined;
+        const data   = error.response?.data as Record<string, unknown> | undefined;
         const errMsg =
           ((data?.error as Record<string, unknown>)?.message as string) ||
           (data?.message as string) ||
@@ -84,14 +83,44 @@ export abstract class BaseClient {
     this.tokens.remove('tec_token');
   }
 
+  // ─── withRetry — shared retry logic ──────────────────────────
+  protected async withRetry<T>(
+    fn:          () => Promise<T>,
+    maxAttempts  = 3,
+    baseDelayMs  = 500,
+  ): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastError = err;
+        const isRetryable =
+          err instanceof TecSdkError
+            ? err.status >= 500 || err.status === 429
+            : true;
+
+        if (!isRetryable || attempt === maxAttempts) break;
+
+        const delay = baseDelayMs * 2 ** (attempt - 1);
+        logger.warn(
+          { attempt, maxAttempts, delay },
+          '[TEC SDK] Retrying request...',
+        );
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+    throw lastError;
+  }
+
   // ─── HTTP methods ─────────────────────────────────────────────
   protected async get<T>(path: string): Promise<T>;
   protected async get<T>(
-    path: string,
+    path:   string,
     schema: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T>;
   protected async get<T>(
-    path: string,
+    path:    string,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
     const res = await this.client.get<T>(path);
@@ -100,13 +129,13 @@ export abstract class BaseClient {
 
   protected async post<T>(path: string, data?: unknown): Promise<T>;
   protected async post<T>(
-    path: string,
-    data: unknown,
+    path:   string,
+    data:   unknown,
     schema: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T>;
   protected async post<T>(
-    path: string,
-    data?: unknown,
+    path:    string,
+    data?:   unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
     const res = await this.client.post<T>(path, data);
@@ -114,8 +143,8 @@ export abstract class BaseClient {
   }
 
   protected async put<T>(
-    path: string,
-    data?: unknown,
+    path:    string,
+    data?:   unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
     const res = await this.client.put<T>(path, data);
@@ -123,8 +152,8 @@ export abstract class BaseClient {
   }
 
   protected async patch<T>(
-    path: string,
-    data?: unknown,
+    path:    string,
+    data?:   unknown,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
     const res = await this.client.patch<T>(path, data);
@@ -132,10 +161,10 @@ export abstract class BaseClient {
   }
 
   protected async delete<T>(
-    path: string,
+    path:    string,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
   ): Promise<T> {
     const res = await this.client.delete<T>(path);
     return schema ? schema.parse(res.data) : res.data;
   }
-    }
+      }
