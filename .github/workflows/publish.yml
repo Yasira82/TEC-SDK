@@ -61,6 +61,14 @@ jobs:
         run: npm run build
 
       - name: Publish to npm
-        run: npm publish --access public --verbose
+        run: |
+          PUBLISHED=$(npm view @yasser172/tec-sdk version 2>/dev/null || echo "0.0.0")
+          CURRENT=$(node -p "require('./package.json').version")
+          if [ "$PUBLISHED" = "$CURRENT" ]; then
+            echo "✅ Version $CURRENT already published — skipping"
+            exit 0
+          fi
+          echo "📦 Publishing version $CURRENT..."
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
