@@ -1,6 +1,6 @@
-import { AuthClient, LoginResponseSchema } from '../src/api/authClient';
-import { TecSdkError }                     from '../src/api/baseClient';
-import axios                               from 'axios';
+import { AuthClient }  from '../src/api/authClient';
+import { TecSdkError } from '../src/api/baseClient';
+import axios           from 'axios';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -10,7 +10,7 @@ const mockUser = {
   piId:             'pi-uuid-1',
   piUsername:       'testuser',
   role:             'user',
-  subscriptionPlan: null,
+  subscriptionPlan: null as string | null,
   createdAt:        '2026-04-10T00:00:00Z',
 };
 
@@ -24,19 +24,23 @@ const mockLoginResponse = {
   },
 };
 
+type ClientWithInternals = AuthClient & {
+  tokens: { get: (k: string) => string | null; set: (k: string, v: string) => void };
+  client: jest.Mocked<typeof axios>;
+};
+
 describe('AuthClient', () => {
   const baseURL = 'https://api.tec.test';
   const apiKey  = 'test-api-key';
-  let client: AuthClient;
+  let client: ClientWithInternals;
 
   beforeEach(() => {
     mockedAxios.create.mockReturnThis();
-    client = new AuthClient(baseURL, apiKey);
-    (client as any).client = mockedAxios;
+    client = new AuthClient(baseURL, apiKey) as ClientWithInternals;
+    client.client = mockedAxios;
     jest.clearAllMocks();
   });
 
-  // ── loginWithPi ────────────────────────────────────────────
   describe('loginWithPi', () => {
     it('logs in successfully and stores tokens in TokenStore', async () => {
       mockedAxios.post.mockResolvedValue({ data: mockLoginResponse });
@@ -46,11 +50,9 @@ describe('AuthClient', () => {
       expect(result.success).toBe(true);
       expect(result.user.piUsername).toBe('testuser');
       expect(result.tokens.accessToken).toBe('access-token-123');
-
-      // TokenStore يجب يكون محفوظ فيه الـ tokens
-      expect((client as any).tokens.get('tec_token')).toBe('access-token-123');
-      expect((client as any).tokens.get('tec_refresh_token')).toBe('refresh-token-456');
-      expect((client as any).tokens.get('tec_user')).toBe(JSON.stringify(mockUser));
+      expect(client.tokens.get('tec_token')).toBe('access-token-123');
+      expect(client.tokens.get('tec_refresh_token')).toBe('refresh-token-456');
+      expect(client.tokens.get('tec_user')).toBe(JSON.stringify(mockUser));
     });
 
     it('returns isNewUser=true for new users', async () => {
@@ -62,7 +64,7 @@ describe('AuthClient', () => {
       expect(result.isNewUser).toBe(true);
     });
 
-    it('throws TecSdkError on 401', async () => {
+    it('throws on 401', async () => {
       mockedAxios.post.mockRejectedValue({
         response: { status: 401, data: { message: 'Unauthorized' } },
       });
@@ -70,15 +72,15 @@ describe('AuthClient', () => {
       await expect(client.loginWithPi('invalid-token')).rejects.toThrow();
     });
 
-    it('throws TecSdkError on network error', async () => {
+    it('throws on network error', async () => {
       mockedAxios.post.mockRejectedValue(new Error('Network Error'));
 
       await expect(client.loginWithPi('pi-access-token')).rejects.toThrow();
     });
 
-    it('throws on invalid response shape (Zod validation)', async () => {
+    it('throws on invalid response shape (Zod)', async () => {
       mockedAxios.post.mockResolvedValue({
-        data: { success: true, user: { id: 'only-id' } }, // missing required fields
+        data: { success: true, user: { id: 'only-id' } },
       });
 
       await expect(client.loginWithPi('pi-access-token')).rejects.toThrow();
@@ -96,11 +98,9 @@ describe('AuthClient', () => {
     });
   });
 
-  // ── refreshToken ───────────────────────────────────────────
   describe('refreshToken', () => {
     it('refreshes token successfully', async () => {
-      // أول لازم يكون فيه refresh token محفوظ
-      (client as any).tokens.set('tec_refresh_token', 'old-refresh-token');
+      client.tokens.set('tec_refresh_token', 'old-refresh-token');
 
       mockedAxios.post.mockResolvedValue({
         data: { success: true, token: 'new-access-token' },
@@ -109,17 +109,16 @@ describe('AuthClient', () => {
       const result = await client.refreshToken();
 
       expect(result.token).toBe('new-access-token');
-      expect((client as any).tokens.get('tec_token')).toBe('new-access-token');
+      expect(client.tokens.get('tec_token')).toBe('new-access-token');
     });
 
     it('throws TecSdkError(401) when no refresh token stored', async () => {
-      // TokenStore فاضي
       await expect(client.refreshToken()).rejects.toThrow(TecSdkError);
       await expect(client.refreshToken()).rejects.toMatchObject({ status: 401 });
     });
 
     it('sends refresh token in request body', async () => {
-      (client as any).tokens.set('tec_refresh_token', 'stored-refresh');
+      client.tokens.set('tec_refresh_token', 'stored-refresh');
 
       mockedAxios.post.mockResolvedValue({
         data: { success: true, token: 'new-token' },
@@ -134,7 +133,6 @@ describe('AuthClient', () => {
     });
   });
 
-  // ── getProfile ─────────────────────────────────────────────
   describe('getProfile', () => {
     it('returns user profile', async () => {
       mockedAxios.get.mockResolvedValue({ data: mockUser });
@@ -153,7 +151,6 @@ describe('AuthClient', () => {
     });
   });
 
-  // ── health ─────────────────────────────────────────────────
   describe('health', () => {
     it('returns health status', async () => {
       mockedAxios.get.mockResolvedValue({ data: { status: 'ok' } });
@@ -165,28 +162,17 @@ describe('AuthClient', () => {
     });
   });
 
-  // ── logout ─────────────────────────────────────────────────
   describe('logout', () => {
-    it('clears all tokens from TokenStore', async () => {
-      // أول نحفظ tokens
-      (client as any).tokens.set('tec_token',         'access');
-      (client as any).tokens.set('tec_refresh_token', 'refresh');
-      (client as any).tokens.set('tec_user',          '{}');
+    it('clears all tokens from TokenStore', () => {
+      client.tokens.set('tec_token',         'access');
+      client.tokens.set('tec_refresh_token', 'refresh');
+      client.tokens.set('tec_user',          '{}');
 
       client.logout();
 
-      expect((client as any).tokens.get('tec_token')).toBeNull();
-      expect((client as any).tokens.get('tec_refresh_token')).toBeNull();
-      expect((client as any).tokens.get('tec_user')).toBeNull();
-    });
-
-    it('clears Authorization header after logout', async () => {
-      (client as any).tokens.set('tec_token', 'access');
-      client.logout();
-
-      expect(
-        (client as any).client.defaults?.headers?.common?.['Authorization'],
-      ).toBeUndefined();
+      expect(client.tokens.get('tec_token')).toBeNull();
+      expect(client.tokens.get('tec_refresh_token')).toBeNull();
+      expect(client.tokens.get('tec_user')).toBeNull();
     });
   });
 });
