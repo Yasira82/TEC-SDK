@@ -151,15 +151,6 @@ export abstract class BaseClient {
     return schema ? schema.parse(res.data) : res.data;
   }
 
-  protected async patch<T>(
-    path:    string,
-    data?:   unknown,
-    schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
-  ): Promise<T> {
-    const res = await this.client.patch<T>(path, data);
-    return schema ? schema.parse(res.data) : res.data;
-  }
-
   protected async delete<T>(
     path:    string,
     schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
@@ -167,4 +158,4 @@ export abstract class BaseClient {
     const res = await this.client.delete<T>(path);
     return schema ? schema.parse(res.data) : res.data;
   }
-      }
+}
