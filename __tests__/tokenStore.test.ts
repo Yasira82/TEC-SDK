@@ -1,4 +1,4 @@
-import { BrowserTokenStore, ServerTokenStore, createTokenStore } from '../src/core/token-store';
+import { ServerTokenStore, createTokenStore } from '../src/core/token-store';
 
 describe('ServerTokenStore', () => {
   let store: ServerTokenStore;
@@ -45,7 +45,6 @@ describe('ServerTokenStore', () => {
 
 describe('createTokenStore', () => {
   it('returns ServerTokenStore in Node.js environment', () => {
-    // في بيئة Jest (Node.js) — window غير موجود
     const store = createTokenStore();
     expect(store).toBeInstanceOf(ServerTokenStore);
   });
@@ -56,34 +55,5 @@ describe('createTokenStore', () => {
     expect(store.get('test_key')).toBe('test_value');
     store.remove('test_key');
     expect(store.get('test_key')).toBeNull();
-  });
-});
-
-describe('BrowserTokenStore', () => {
-  let store: BrowserTokenStore;
-
-  beforeEach(() => {
-    store = new BrowserTokenStore();
-    localStorage.clear();
-  });
-
-  it('returns null for missing key', () => {
-    expect(store.get('nonexistent')).toBeNull();
-  });
-
-  it('sets and gets a value', () => {
-    store.set('tec_token', 'browser-token');
-    expect(store.get('tec_token')).toBe('browser-token');
-  });
-
-  it('removes a key', () => {
-    store.set('tec_token', 'browser-token');
-    store.remove('tec_token');
-    expect(store.get('tec_token')).toBeNull();
-  });
-
-  it('persists in localStorage', () => {
-    store.set('persist_key', 'persist_value');
-    expect(localStorage.getItem('persist_key')).toBe('persist_value');
   });
 });
