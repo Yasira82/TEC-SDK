@@ -31,6 +31,9 @@
     "zod":   "^3.22.4",
     "pino":  "^8.19.0"
   },
+  "optionalDependencies": {
+    "pino-pretty": "^11.0.0"
+  },
   "devDependencies": {
     "@types/jest":                      "^29.5.12",
     "@types/node":                      "^20.11.19",
