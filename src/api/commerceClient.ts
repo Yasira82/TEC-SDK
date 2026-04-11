@@ -125,12 +125,16 @@ export class CommerceClient extends BaseClient {
   }
 
   async getSubscription(userId: string): Promise<Subscription | null> {
-    return this.withRetry(async () => {
-      try {
-        const res = await this.get<unknown>(`/api/commerce/subscriptions/user/${userId}`);
-        return SubscriptionSchema.parse(res);
-      } catch { return null; }
-    });
+  return this.withRetry(async () => {
+    try {
+      const res = await this.get<unknown>(`/api/commerce/subscriptions/user/${userId}`);
+      return SubscriptionSchema.parse(res);
+    } catch (err: unknown) {
+      // ✅ P2-6: 404 = no subscription, anything else = rethrow
+      if (err instanceof TecSdkError && err.status === 404) return null;
+      throw err;
+    }
+  });
   }
 
   async createSubscription(data: { planId: string; interval: 'monthly' | 'yearly' }): Promise<Subscription> {
