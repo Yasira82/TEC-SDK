@@ -1,27 +1,27 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "outDir": "dist",
-    "rootDir": "src",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
+    "target":                          "ES2020",
+    "module":                          "CommonJS",
+    "moduleResolution":                "Node",
+    "lib":                             ["ES2020", "DOM", "DOM.Iterable"],
+    "outDir":                          "dist",
+    "rootDir":                         "src",
+    "declaration":                     true,
+    "declarationMap":                  true,
+    "sourceMap":                       true,
+    "strict":                          true,
+    "noImplicitAny":                   true,
+    "strictNullChecks":                true,
+    "esModuleInterop":                 true,
+    "skipLibCheck":                    true,
+    "resolveJsonModule":               true,
+    "allowSyntheticDefaultImports":    true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
+    "baseUrl":                         ".",
     "paths": {
       "@/*": ["src/*"]
     }
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "**/__tests__/*"]
+  "include":  ["src"],
+  "exclude":  ["node_modules", "dist", "**/__tests__/*"]
 }
