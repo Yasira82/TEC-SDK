@@ -132,6 +132,9 @@ export class CommerceClient extends BaseClient {
     } catch (err: unknown) {
       // ✅ P2-6: 404 = no subscription, anything else = rethrow
       if (err instanceof TecSdkError && err.status === 404) return null;
+      // fallback for raw axios errors
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) return null;
       throw err;
     }
   });
