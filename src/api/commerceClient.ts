@@ -1,4 +1,4 @@
-import { BaseClient } from './baseClient';
+import { BaseClient, TecSdkError } from './baseClient';
 import { z }          from 'zod';
 
 export const ProductSchema = z.object({
