@@ -74,14 +74,12 @@ export abstract class BaseClient {
 
   // ─── Token helpers ────────────────────────────────────────────
   setToken(token: string): void {
-    this.client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    this.tokens.set('tec_token', token);
-  }
+  this.tokens.set('tec_token', token);
+}
 
-  clearToken(): void {
-    delete this.client.defaults.headers.common['Authorization'];
-    this.tokens.remove('tec_token');
-  }
+clearToken(): void {
+  this.tokens.remove('tec_token');
+}
 
   // ─── withRetry — shared retry logic ──────────────────────────
   protected async withRetry<T>(
