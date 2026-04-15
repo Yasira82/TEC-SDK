@@ -35,35 +35,35 @@ export class NotificationClient extends BaseClient {
       const query = new URLSearchParams();
       if (params?.unreadOnly) query.set('unreadOnly', 'true');
       if (params?.limit)      query.set('limit', String(params.limit));
-      const res = await this.get<unknown>(`/api/notifications/user/${userId}?${query.toString()}`);
+      const res = await this.get<unknown>(`/api/notifications/user/${encodeURIComponent(userId)}?${query.toString()}`);
       return z.array(NotificationSchema).parse(res);
     });
   }
 
   async getUnreadCount(userId: string): Promise<number> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/api/notifications/user/${userId}/unread-count`);
+      const res = await this.get<unknown>(`/api/notifications/user/${encodeURIComponent(userId)}/unread-count`);
       return z.object({ count: z.number() }).parse(res).count;
     });
   }
 
   async markAsRead(notificationId: string): Promise<Notification> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/api/notifications/${notificationId}/read`, {});
+      const res = await this.post<unknown>(`/api/notifications/${encodeURIComponent(notificationId)}/read`, {});
       return NotificationSchema.parse(res);
     });
   }
 
   async markAllAsRead(userId: string): Promise<{ updated: number }> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/api/notifications/user/${userId}/read-all`, {});
+      const res = await this.post<unknown>(`/api/notifications/user/${encodeURIComponent(userId)}/read-all`, {});
       return z.object({ updated: z.number() }).parse(res);
     });
   }
 
   async getPreferences(userId: string): Promise<NotificationPreferences> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/api/notifications/preferences/${userId}`);
+      const res = await this.get<unknown>(`/api/notifications/preferences/${encodeURIComponent(userId)}`);
       return NotificationPreferencesSchema.parse(res);
     });
   }
@@ -73,7 +73,7 @@ export class NotificationClient extends BaseClient {
     prefs:  Partial<Omit<NotificationPreferences, 'userId'>>,
   ): Promise<NotificationPreferences> {
     return this.withRetry(async () => {
-      const res = await this.patch<unknown>(`/api/notifications/preferences/${userId}`, prefs);
+      const res = await this.patch<unknown>(`/api/notifications/preferences/${encodeURIComponent(userId)}`, prefs);
       return NotificationPreferencesSchema.parse(res);
     });
   }
@@ -84,4 +84,4 @@ export class NotificationClient extends BaseClient {
       return z.object({ success: z.boolean() }).parse(res);
     });
   }
-}
+                          }
