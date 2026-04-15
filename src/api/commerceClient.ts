@@ -1,5 +1,5 @@
 import { BaseClient, TecSdkError } from './baseClient';
-import { z }          from 'zod';
+import { z }                       from 'zod';
 
 export const ProductSchema = z.object({
   id:          z.string(),
@@ -59,10 +59,10 @@ export const CreateOrderSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 
-export type Product       = z.infer<typeof ProductSchema>;
-export type Order         = z.infer<typeof OrderSchema>;
-export type OrderItem     = z.infer<typeof OrderItemSchema>;
-export type Subscription  = z.infer<typeof SubscriptionSchema>;
+export type Product        = z.infer<typeof ProductSchema>;
+export type Order          = z.infer<typeof OrderSchema>;
+export type OrderItem      = z.infer<typeof OrderItemSchema>;
+export type Subscription   = z.infer<typeof SubscriptionSchema>;
 export type CreateOrderDto = z.infer<typeof CreateOrderSchema>;
 
 export class CommerceClient extends BaseClient {
@@ -83,7 +83,7 @@ export class CommerceClient extends BaseClient {
 
   async getProductById(productId: string): Promise<Product> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/api/commerce/products/${productId}`);
+      const res = await this.get<unknown>(`/api/commerce/products/${encodeURIComponent(productId)}`);
       return ProductSchema.parse(res);
     });
   }
@@ -105,39 +105,37 @@ export class CommerceClient extends BaseClient {
 
   async getOrder(orderId: string): Promise<Order> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/api/commerce/orders/${orderId}`);
+      const res = await this.get<unknown>(`/api/commerce/orders/${encodeURIComponent(orderId)}`);
       return OrderSchema.parse(res);
     });
   }
 
   async getUserOrders(userId: string): Promise<Order[]> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/api/commerce/orders/user/${userId}`);
+      const res = await this.get<unknown>(`/api/commerce/orders/user/${encodeURIComponent(userId)}`);
       return z.array(OrderSchema).parse(res);
     });
   }
 
   async cancelOrder(orderId: string): Promise<Order> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/api/commerce/orders/${orderId}/cancel`, {});
+      const res = await this.post<unknown>(`/api/commerce/orders/${encodeURIComponent(orderId)}/cancel`, {});
       return OrderSchema.parse(res);
     });
   }
 
   async getSubscription(userId: string): Promise<Subscription | null> {
-  return this.withRetry(async () => {
-    try {
-      const res = await this.get<unknown>(`/api/commerce/subscriptions/user/${userId}`);
-      return SubscriptionSchema.parse(res);
-    } catch (err: unknown) {
-      // ✅ P2-6: 404 = no subscription, anything else = rethrow
-      if (err instanceof TecSdkError && err.status === 404) return null;
-      // fallback for raw axios errors
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 404) return null;
-      throw err;
-    }
-  });
+    return this.withRetry(async () => {
+      try {
+        const res = await this.get<unknown>(`/api/commerce/subscriptions/user/${encodeURIComponent(userId)}`);
+        return SubscriptionSchema.parse(res);
+      } catch (err: unknown) {
+        if (err instanceof TecSdkError && err.status === 404) return null;
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status === 404) return null;
+        throw err;
+      }
+    });
   }
 
   async createSubscription(data: { planId: string; interval: 'monthly' | 'yearly' }): Promise<Subscription> {
@@ -149,7 +147,7 @@ export class CommerceClient extends BaseClient {
 
   async cancelSubscription(subscriptionId: string): Promise<Subscription> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/api/commerce/subscriptions/${subscriptionId}/cancel`, {});
+      const res = await this.post<unknown>(`/api/commerce/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, {});
       return SubscriptionSchema.parse(res);
     });
   }
