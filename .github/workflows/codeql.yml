@@ -3,6 +3,9 @@ name: 🔍 Security Analysis
 on:
   push:
     branches: [main]
+  # ✅ P2-8: اشتغل على PRs كمان
+  pull_request:
+    branches: [main]
   schedule:
     - cron: '0 3 * * 1'
 
@@ -41,9 +44,9 @@ jobs:
           console.log('Clean — no zero-width chars found.');
           "
 
+      # ✅ P2-7: احذف continue-on-error — audit failures تبلوك الـ CI
       - name: npm audit
         run: npm audit --audit-level=high
-        continue-on-error: true
 
       - name: Build Check
         run: npm run build
