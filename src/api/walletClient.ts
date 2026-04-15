@@ -34,7 +34,7 @@ export class WalletClient extends BaseClient {
 
   async getBalance(userId: string): Promise<WalletBalance> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/wallets/${userId}/balance`);
+      const res = await this.get<unknown>(`/wallets/${encodeURIComponent(userId)}/balance`);
       return WalletBalanceSchema.parse(res);
     });
   }
@@ -45,7 +45,7 @@ export class WalletClient extends BaseClient {
     referenceId: string,
   ): Promise<WalletTransaction> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/wallets/${userId}/credit`, {
+      const res = await this.post<unknown>(`/wallets/${encodeURIComponent(userId)}/credit`, {
         amount,
         referenceId,
       });
@@ -59,7 +59,7 @@ export class WalletClient extends BaseClient {
     referenceId: string,
   ): Promise<WalletTransaction> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/wallets/${userId}/debit`, {
+      const res = await this.post<unknown>(`/wallets/${encodeURIComponent(userId)}/debit`, {
         amount,
         referenceId,
       });
@@ -69,8 +69,8 @@ export class WalletClient extends BaseClient {
 
   async getTransactions(userId: string): Promise<WalletTransaction[]> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown[]>(`/wallets/${userId}/transactions`);
+      const res = await this.get<unknown[]>(`/wallets/${encodeURIComponent(userId)}/transactions`);
       return z.array(WalletTransactionSchema).parse(res);
     });
   }
-                          }
+}
