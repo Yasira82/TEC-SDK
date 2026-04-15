@@ -1,23 +1,25 @@
-import { AuthClient } from './api/authClient';
-import { WalletClient } from './api/walletClient';
-import { PaymentClient } from './api/paymentClient';
-import { HealthClient } from './api/healthClient';
-import { AssetClient } from './api/assetClient';
-import { CommerceClient } from './api/commerceClient';
+import { AuthClient }         from './api/authClient';
+import { WalletClient }       from './api/walletClient';
+import { PaymentClient }      from './api/paymentClient';
+import { HealthClient }       from './api/healthClient';
+import { AssetClient }        from './api/assetClient';
+import { CommerceClient }     from './api/commerceClient';
 import { NotificationClient } from './api/notificationClient';
 
+// ✅ P1-20: TecSdkConfig تعريف واحد فقط هنا
 export interface TecSdkConfig {
   gatewayUrl: string;
-  apiKey?: string;
+  apiKey?:    string;
+  timeout?:   number;
 }
 
 export class TecSdk {
-  public readonly auth: AuthClient;
-  public readonly wallet: WalletClient;
-  public readonly payment: PaymentClient;
-  public readonly health: HealthClient;
-  public readonly assets: AssetClient;
-  public readonly commerce: CommerceClient;
+  public readonly auth:          AuthClient;
+  public readonly wallet:        WalletClient;
+  public readonly payment:       PaymentClient;
+  public readonly health:        HealthClient;
+  public readonly assets:        AssetClient;
+  public readonly commerce:      CommerceClient;
   public readonly notifications: NotificationClient;
 
   constructor(config: TecSdkConfig) {
@@ -31,7 +33,10 @@ export class TecSdk {
     this.notifications = new NotificationClient(gatewayUrl, apiKey);
   }
 
+  // ✅ P1-19: auth + health مضافين
   setAuthToken(token: string): void {
+    this.auth.setToken(token);
+    this.health.setToken(token);
     this.wallet.setToken(token);
     this.payment.setToken(token);
     this.assets.setToken(token);
@@ -41,6 +46,7 @@ export class TecSdk {
 
   clearAuthToken(): void {
     this.auth.logout();
+    this.health.clearToken();
     this.wallet.clearToken();
     this.payment.clearToken();
     this.assets.clearToken();
