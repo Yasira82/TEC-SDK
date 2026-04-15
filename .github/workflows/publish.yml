@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+  # ✅ P2-8: اشتغل على PRs كمان
+  pull_request:
+    branches:
+      - main
 
 jobs:
   security-gate:
@@ -60,7 +64,9 @@ jobs:
       - name: Build SDK
         run: npm run build
 
+      # ✅ Publish فقط على push — مش على PRs
       - name: Publish to npm
+        if: github.event_name == 'push'
         run: |
           PUBLISHED=$(npm view @yasser172/tec-sdk version 2>/dev/null || echo "0.0.0")
           CURRENT=$(node -p "require('./package.json').version")
