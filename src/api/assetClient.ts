@@ -33,14 +33,14 @@ export class AssetClient extends BaseClient {
 
   async getMyAssets(userId: string): Promise<Asset[]> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/api/assets/user/${userId}`);
+      const res = await this.get<unknown>(`/api/assets/user/${encodeURIComponent(userId)}`);
       return z.array(AssetSchema).parse(res);
     });
   }
 
   async getAssetById(assetId: string): Promise<Asset> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/api/assets/${assetId}`);
+      const res = await this.get<unknown>(`/api/assets/${encodeURIComponent(assetId)}`);
       return AssetSchema.parse(res);
     });
   }
@@ -55,15 +55,15 @@ export class AssetClient extends BaseClient {
 
   async updateAsset(assetId: string, metadata: Record<string, unknown>): Promise<Asset> {
     return this.withRetry(async () => {
-      const res = await this.put<unknown>(`/api/assets/${assetId}`, { metadata });
+      const res = await this.put<unknown>(`/api/assets/${encodeURIComponent(assetId)}`, { metadata });
       return AssetSchema.parse(res);
     });
   }
 
   async deleteAsset(assetId: string): Promise<{ success: boolean }> {
     return this.withRetry(async () => {
-      const res = await this.delete<unknown>(`/api/assets/${assetId}`);
+      const res = await this.delete<unknown>(`/api/assets/${encodeURIComponent(assetId)}`);
       return z.object({ success: z.boolean() }).parse(res);
     });
   }
-}
+        }
