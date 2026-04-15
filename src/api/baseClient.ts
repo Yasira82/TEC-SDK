@@ -3,9 +3,9 @@ import axios, {
   InternalAxiosRequestConfig,
   AxiosError,
 } from 'axios';
-import { z }                              from 'zod';
-import { logger }                         from '../utils/logger';
-import { TokenStore, createTokenStore }   from '../core/token-store';
+import { z }                            from 'zod';
+import { logger }                       from '../utils/logger';
+import { TokenStore, createTokenStore } from '../core/token-store';
 
 export class TecSdkError extends Error {
   public readonly status:   number;
@@ -28,6 +28,8 @@ export abstract class BaseClient {
     protected baseURL:  string,
     protected apiKey?:  string,
     tokenStore?:        TokenStore,
+    // ✅ P3-8: timeout قابل للتخصيص — مش hardcoded
+    timeout = 15000,
   ) {
     if (this.baseURL.endsWith('/')) {
       this.baseURL = this.baseURL.slice(0, -1);
@@ -41,10 +43,10 @@ export abstract class BaseClient {
         'Content-Type': 'application/json',
         ...(apiKey && { 'x-api-key': apiKey }),
       },
-      timeout: 15000,
+      timeout,
     });
 
-    // ─── Request interceptor — attach Bearer token ────────────
+    // ─── Request interceptor ──────────────────────────────────
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         const token = this.tokens.get('tec_token');
@@ -55,7 +57,7 @@ export abstract class BaseClient {
       },
     );
 
-    // ─── Response interceptor — normalise errors ──────────────
+    // ─── Response interceptor ─────────────────────────────────
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
@@ -74,18 +76,18 @@ export abstract class BaseClient {
 
   // ─── Token helpers ────────────────────────────────────────────
   setToken(token: string): void {
-  this.tokens.set('tec_token', token);
-}
+    this.tokens.set('tec_token', token);
+  }
 
-clearToken(): void {
-  this.tokens.remove('tec_token');
-}
+  clearToken(): void {
+    this.tokens.remove('tec_token');
+  }
 
-  // ─── withRetry — shared retry logic ──────────────────────────
+  // ─── withRetry ────────────────────────────────────────────────
   protected async withRetry<T>(
-    fn:          () => Promise<T>,
-    maxAttempts  = 3,
-    baseDelayMs  = 500,
+    fn:         () => Promise<T>,
+    maxAttempts = 3,
+    baseDelayMs = 500,
   ): Promise<T> {
     let lastError: unknown;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -101,10 +103,7 @@ clearToken(): void {
         if (!isRetryable || attempt === maxAttempts) break;
 
         const delay = baseDelayMs * 2 ** (attempt - 1);
-        logger.warn(
-          { attempt, maxAttempts, delay },
-          '[TEC SDK] Retrying request...',
-        );
+        logger.warn({ attempt, maxAttempts, delay }, '[TEC SDK] Retrying request...');
         await new Promise(r => setTimeout(r, delay));
       }
     }
@@ -113,56 +112,31 @@ clearToken(): void {
 
   // ─── HTTP methods ─────────────────────────────────────────────
   protected async get<T>(path: string): Promise<T>;
-  protected async get<T>(
-    path:   string,
-    schema: z.ZodSchema<T, z.ZodTypeDef, unknown>,
-  ): Promise<T>;
-  protected async get<T>(
-    path:    string,
-    schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
-  ): Promise<T> {
+  protected async get<T>(path: string, schema: z.ZodSchema<T, z.ZodTypeDef, unknown>): Promise<T>;
+  protected async get<T>(path: string, schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>): Promise<T> {
     const res = await this.client.get<T>(path);
     return schema ? schema.parse(res.data) : res.data;
   }
 
   protected async post<T>(path: string, data?: unknown): Promise<T>;
-  protected async post<T>(
-    path:   string,
-    data:   unknown,
-    schema: z.ZodSchema<T, z.ZodTypeDef, unknown>,
-  ): Promise<T>;
-  protected async post<T>(
-    path:    string,
-    data?:   unknown,
-    schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
-  ): Promise<T> {
+  protected async post<T>(path: string, data: unknown, schema: z.ZodSchema<T, z.ZodTypeDef, unknown>): Promise<T>;
+  protected async post<T>(path: string, data?: unknown, schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>): Promise<T> {
     const res = await this.client.post<T>(path, data);
     return schema ? schema.parse(res.data) : res.data;
   }
 
-  protected async put<T>(
-    path:    string,
-    data?:   unknown,
-    schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
-  ): Promise<T> {
+  protected async put<T>(path: string, data?: unknown, schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>): Promise<T> {
     const res = await this.client.put<T>(path, data);
     return schema ? schema.parse(res.data) : res.data;
   }
 
-  protected async patch<T>(
-    path:    string,
-    data?:   unknown,
-    schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
-  ): Promise<T> {
+  protected async patch<T>(path: string, data?: unknown, schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>): Promise<T> {
     const res = await this.client.patch<T>(path, data);
     return schema ? schema.parse(res.data) : res.data;
   }
 
-  protected async delete<T>(
-    path:    string,
-    schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>,
-  ): Promise<T> {
+  protected async delete<T>(path: string, schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>): Promise<T> {
     const res = await this.client.delete<T>(path);
     return schema ? schema.parse(res.data) : res.data;
   }
-          }
+      }
