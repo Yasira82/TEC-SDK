@@ -43,7 +43,7 @@ export class PaymentClient extends BaseClient {
     metadata?: Record<string, unknown>,
   ): Promise<Payment> {
     return this.withRetry(() =>
-      this.post(`/payments/${paymentId}/approve`, { metadata }, PaymentSchema),
+      this.post(`/payments/${encodeURIComponent(paymentId)}/approve`, { metadata }, PaymentSchema),
     );
   }
 
@@ -54,7 +54,7 @@ export class PaymentClient extends BaseClient {
   ): Promise<Payment> {
     return this.withRetry(() =>
       this.post(
-        `/payments/${paymentId}/complete`,
+        `/payments/${encodeURIComponent(paymentId)}/complete`,
         { transactionId, metadata },
         PaymentSchema,
       ),
@@ -63,20 +63,20 @@ export class PaymentClient extends BaseClient {
 
   async cancelPayment(paymentId: string): Promise<Payment> {
     return this.withRetry(() =>
-      this.post(`/payments/${paymentId}/cancel`, {}, PaymentSchema),
+      this.post(`/payments/${encodeURIComponent(paymentId)}/cancel`, {}, PaymentSchema),
     );
   }
 
   async getPayment(paymentId: string): Promise<Payment> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown>(`/payments/${paymentId}`);
+      const res = await this.get<unknown>(`/payments/${encodeURIComponent(paymentId)}`);
       return PaymentSchema.parse(res);
     });
   }
 
   async listUserPayments(userId: string): Promise<Payment[]> {
     return this.withRetry(async () => {
-      const res = await this.get<unknown[]>(`/payments/user/${userId}`);
+      const res = await this.get<unknown[]>(`/payments/user/${encodeURIComponent(userId)}`);
       return z.array(PaymentSchema).parse(res);
     });
   }
@@ -86,4 +86,4 @@ export class PaymentClient extends BaseClient {
       this.post('/payments/resolve-incomplete', { piPaymentId }, PaymentSchema),
     );
   }
-}
+  }
