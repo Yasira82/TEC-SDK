@@ -1,4 +1,5 @@
 import { BaseClient } from './baseClient';
+import { TokenStore } from '../core/token-store';
 import { z }          from 'zod';
 
 const dateOrNull = z
@@ -23,41 +24,25 @@ export const PaymentSchema = z.object({
 export type Payment = z.infer<typeof PaymentSchema>;
 
 export class PaymentClient extends BaseClient {
-  constructor(baseURL: string, apiKey?: string) {
-    super(baseURL, apiKey);
+  constructor(baseURL: string, apiKey?: string, tokenStore?: TokenStore, timeout?: number) {
+    super(baseURL, apiKey, tokenStore, timeout);
   }
 
-  async createPayment(
-    userId:    string,
-    amount:    number,
-    currency = 'PI',
-    metadata?: Record<string, unknown>,
-  ): Promise<Payment> {
+  async createPayment(userId: string, amount: number, currency = 'PI', metadata?: Record<string, unknown>): Promise<Payment> {
     return this.withRetry(() =>
       this.post('/payments', { userId, amount, currency, metadata }, PaymentSchema),
     );
   }
 
-  async approvePayment(
-    paymentId: string,
-    metadata?: Record<string, unknown>,
-  ): Promise<Payment> {
+  async approvePayment(paymentId: string, metadata?: Record<string, unknown>): Promise<Payment> {
     return this.withRetry(() =>
       this.post(`/payments/${encodeURIComponent(paymentId)}/approve`, { metadata }, PaymentSchema),
     );
   }
 
-  async completePayment(
-    paymentId:     string,
-    transactionId: string,
-    metadata?:     Record<string, unknown>,
-  ): Promise<Payment> {
+  async completePayment(paymentId: string, transactionId: string, metadata?: Record<string, unknown>): Promise<Payment> {
     return this.withRetry(() =>
-      this.post(
-        `/payments/${encodeURIComponent(paymentId)}/complete`,
-        { transactionId, metadata },
-        PaymentSchema,
-      ),
+      this.post(`/payments/${encodeURIComponent(paymentId)}/complete`, { transactionId, metadata }, PaymentSchema),
     );
   }
 
@@ -86,4 +71,4 @@ export class PaymentClient extends BaseClient {
       this.post('/payments/resolve-incomplete', { piPaymentId }, PaymentSchema),
     );
   }
-  }
+}
