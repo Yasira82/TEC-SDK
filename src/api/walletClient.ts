@@ -54,4 +54,4 @@ export class WalletClient extends BaseClient {
       return z.array(WalletTransactionSchema).parse(res);
     });
   }
-}
+        }
