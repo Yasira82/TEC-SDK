@@ -82,4 +82,4 @@ export class NotificationClient extends BaseClient {
       return z.object({ success: z.boolean() }).parse(res);
     });
   }
-}
+  }
