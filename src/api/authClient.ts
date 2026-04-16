@@ -1,7 +1,6 @@
-import { TokenStore } from '../core/token-store';
 import { BaseClient, TecSdkError } from './baseClient';
 import { TokenStore }               from '../core/token-store';
-import { z } from 'zod';
+import { z }                        from 'zod';
 
 export const AuthUserSchema = z.object({
   id:               z.string(),
@@ -39,7 +38,7 @@ const TOKEN_KEYS = {
 
 export class AuthClient extends BaseClient {
   constructor(baseURL: string, apiKey?: string, tokenStore?: TokenStore, timeout?: number) {
-  super(baseURL, apiKey, tokenStore, timeout);
+    super(baseURL, apiKey, tokenStore, timeout);
   }
 
   async loginWithPi(piAccessToken: string): Promise<LoginResponse> {
@@ -57,7 +56,6 @@ export class AuthClient extends BaseClient {
         'Authentication failed';
       throw new TecSdkError(status, message, err);
     }
-
     const result = LoginResponseSchema.parse(raw);
     this.tokens.set(TOKEN_KEYS.ACCESS,  result.tokens.accessToken);
     this.tokens.set(TOKEN_KEYS.REFRESH, result.tokens.refreshToken);
@@ -91,4 +89,4 @@ export class AuthClient extends BaseClient {
     this.tokens.remove(TOKEN_KEYS.USER);
     this.clearToken();
   }
-}
+  }
