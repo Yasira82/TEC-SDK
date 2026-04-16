@@ -1,5 +1,6 @@
 import { BaseClient, TecSdkError } from './baseClient';
-import { z }                       from 'zod';
+import { TokenStore }               from '../core/token-store';
+import { z }                        from 'zod';
 
 export const ProductSchema = z.object({
   id:          z.string(),
@@ -66,8 +67,8 @@ export type Subscription   = z.infer<typeof SubscriptionSchema>;
 export type CreateOrderDto = z.infer<typeof CreateOrderSchema>;
 
 export class CommerceClient extends BaseClient {
-  constructor(baseURL: string, apiKey?: string) {
-    super(baseURL, apiKey);
+  constructor(baseURL: string, apiKey?: string, tokenStore?: TokenStore, timeout?: number) {
+    super(baseURL, apiKey, tokenStore, timeout);
   }
 
   async getProducts(params?: { category?: string; page?: number; limit?: number }): Promise<Product[]> {
