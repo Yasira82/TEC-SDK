@@ -1,4 +1,5 @@
 import { BaseClient } from './baseClient';
+import { TokenStore } from '../core/token-store';
 import { z }          from 'zod';
 
 export const WalletBalanceSchema = z.object({
@@ -14,22 +15,16 @@ export const WalletTransactionSchema = z.object({
   currency:      z.string(),
   type:          z.string().optional(),
   status:        z.enum(['pending', 'completed', 'failed']).optional(),
-  createdAt:     z.preprocess(
-    (v) => (v ? new Date(v as string) : null),
-    z.date().nullable(),
-  ),
-  updatedAt:     z.preprocess(
-    (v) => (v ? new Date(v as string) : null),
-    z.date().nullable(),
-  ),
+  createdAt:     z.preprocess((v) => (v ? new Date(v as string) : null), z.date().nullable()),
+  updatedAt:     z.preprocess((v) => (v ? new Date(v as string) : null), z.date().nullable()),
 });
 
 export type WalletBalance     = z.infer<typeof WalletBalanceSchema>;
 export type WalletTransaction = z.infer<typeof WalletTransactionSchema>;
 
 export class WalletClient extends BaseClient {
-  constructor(baseURL: string, apiKey?: string) {
-    super(baseURL, apiKey);
+  constructor(baseURL: string, apiKey?: string, tokenStore?: TokenStore, timeout?: number) {
+    super(baseURL, apiKey, tokenStore, timeout);
   }
 
   async getBalance(userId: string): Promise<WalletBalance> {
@@ -39,30 +34,16 @@ export class WalletClient extends BaseClient {
     });
   }
 
-  async creditWallet(
-    userId:      string,
-    amount:      number,
-    referenceId: string,
-  ): Promise<WalletTransaction> {
+  async creditWallet(userId: string, amount: number, referenceId: string): Promise<WalletTransaction> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/wallets/${encodeURIComponent(userId)}/credit`, {
-        amount,
-        referenceId,
-      });
+      const res = await this.post<unknown>(`/wallets/${encodeURIComponent(userId)}/credit`, { amount, referenceId });
       return WalletTransactionSchema.parse(res);
     });
   }
 
-  async debitWallet(
-    userId:      string,
-    amount:      number,
-    referenceId: string,
-  ): Promise<WalletTransaction> {
+  async debitWallet(userId: string, amount: number, referenceId: string): Promise<WalletTransaction> {
     return this.withRetry(async () => {
-      const res = await this.post<unknown>(`/wallets/${encodeURIComponent(userId)}/debit`, {
-        amount,
-        referenceId,
-      });
+      const res = await this.post<unknown>(`/wallets/${encodeURIComponent(userId)}/debit`, { amount, referenceId });
       return WalletTransactionSchema.parse(res);
     });
   }
