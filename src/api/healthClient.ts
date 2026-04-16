@@ -1,5 +1,6 @@
 import { BaseClient } from './baseClient';
-import { z } from 'zod';
+import { TokenStore } from '../core/token-store';
+import { z }          from 'zod';
 
 export const ServiceHealthSchema = z.object({
   service:     z.string(),
@@ -20,8 +21,8 @@ export type ServiceHealth = z.infer<typeof ServiceHealthSchema>;
 export type SystemHealth  = z.infer<typeof SystemHealthSchema>;
 
 export class HealthClient extends BaseClient {
-  constructor(baseURL: string, apiKey?: string) {
-    super(baseURL, apiKey);
+  constructor(baseURL: string, apiKey?: string, tokenStore?: TokenStore, timeout?: number) {
+    super(baseURL, apiKey, tokenStore, timeout);
   }
 
   async isAlive(): Promise<boolean> {
@@ -38,7 +39,6 @@ export class HealthClient extends BaseClient {
   }
 
   async checkService(serviceName: string): Promise<ServiceHealth> {
-    // ✅ P2-6: encodeURIComponent على الـ dynamic param
     return this.get(`/health/check/${encodeURIComponent(serviceName)}`, ServiceHealthSchema);
   }
 
