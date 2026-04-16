@@ -1,4 +1,5 @@
 import { BaseClient, TecSdkError } from './baseClient';
+import { TokenStore }               from '../core/token-store';
 import { z } from 'zod';
 
 export const AuthUserSchema = z.object({
@@ -22,8 +23,8 @@ export const LoginResponseSchema = z.object({
   tokens:    AuthTokensSchema,
 });
 
-export type AuthUser     = z.infer<typeof AuthUserSchema>;
-export type AuthTokens   = z.infer<typeof AuthTokensSchema>;
+export type AuthUser      = z.infer<typeof AuthUserSchema>;
+export type AuthTokens    = z.infer<typeof AuthTokensSchema>;
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 
 export const UserSchema = AuthUserSchema;
@@ -36,52 +37,40 @@ const TOKEN_KEYS = {
 } as const;
 
 export class AuthClient extends BaseClient {
-  constructor(baseURL: string, apiKey?: string) {
-    super(baseURL, apiKey);
+  constructor(baseURL: string, apiKey?: string, tokenStore?: TokenStore, timeout?: number) {
+    super(baseURL, apiKey, tokenStore, timeout);
   }
 
   async loginWithPi(piAccessToken: string): Promise<LoginResponse> {
     let raw: unknown;
-
     try {
-      raw = await this.post<unknown>('/api/auth/pi-login', {
-        accessToken: piAccessToken,
-      });
+      raw = await this.post<unknown>('/api/auth/pi-login', { accessToken: piAccessToken });
     } catch (err: unknown) {
       if (err instanceof TecSdkError) throw err;
-
-      const anyErr  = err as Record<string, unknown>;
+      const anyErr   = err as Record<string, unknown>;
       const response = anyErr?.response as Record<string, unknown> | undefined;
       const status   = (response?.status as number) ?? 500;
       const message  =
         ((response?.data as Record<string, unknown>)?.message as string) ??
         (anyErr?.message as string) ??
         'Authentication failed';
-
       throw new TecSdkError(status, message, err);
     }
 
     const result = LoginResponseSchema.parse(raw);
-
-    // ✅ Use TokenStore abstraction — safe in both browser and Node.js
     this.tokens.set(TOKEN_KEYS.ACCESS,  result.tokens.accessToken);
     this.tokens.set(TOKEN_KEYS.REFRESH, result.tokens.refreshToken);
     this.tokens.set(TOKEN_KEYS.USER,    JSON.stringify(result.user));
-
     return result;
   }
 
   async refreshToken(): Promise<{ token: string }> {
-    // ✅ Read from TokenStore — no direct localStorage access
     const refreshToken = this.tokens.get(TOKEN_KEYS.REFRESH);
-
     if (!refreshToken) throw new TecSdkError(401, 'No refresh token found');
-
     const res = await this.post<{ success: boolean; token: string }>(
       '/api/auth/refresh',
       { refreshToken },
     );
-
     this.tokens.set(TOKEN_KEYS.ACCESS, res.token);
     return res;
   }
@@ -96,7 +85,6 @@ export class AuthClient extends BaseClient {
   }
 
   logout(): void {
-    // ✅ Use TokenStore — no direct localStorage access
     this.tokens.remove(TOKEN_KEYS.ACCESS);
     this.tokens.remove(TOKEN_KEYS.REFRESH);
     this.tokens.remove(TOKEN_KEYS.USER);
