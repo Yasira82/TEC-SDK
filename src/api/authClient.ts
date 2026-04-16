@@ -1,3 +1,4 @@
+import { TokenStore } from '../core/token-store';
 import { BaseClient, TecSdkError } from './baseClient';
 import { TokenStore }               from '../core/token-store';
 import { z } from 'zod';
@@ -38,7 +39,7 @@ const TOKEN_KEYS = {
 
 export class AuthClient extends BaseClient {
   constructor(baseURL: string, apiKey?: string, tokenStore?: TokenStore, timeout?: number) {
-    super(baseURL, apiKey, tokenStore, timeout);
+  super(baseURL, apiKey, tokenStore, timeout);
   }
 
   async loginWithPi(piAccessToken: string): Promise<LoginResponse> {
