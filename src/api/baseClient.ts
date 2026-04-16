@@ -28,8 +28,7 @@ export abstract class BaseClient {
     protected baseURL:  string,
     protected apiKey?:  string,
     tokenStore?:        TokenStore,
-    // ✅ P3-8: timeout قابل للتخصيص — مش hardcoded
-    timeout = 15000,
+    timeout             = 15000,
   ) {
     if (this.baseURL.endsWith('/')) {
       this.baseURL = this.baseURL.slice(0, -1);
@@ -46,7 +45,6 @@ export abstract class BaseClient {
       timeout,
     });
 
-    // ─── Request interceptor ──────────────────────────────────
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         const token = this.tokens.get('tec_token');
@@ -57,7 +55,6 @@ export abstract class BaseClient {
       },
     );
 
-    // ─── Response interceptor ─────────────────────────────────
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
@@ -74,7 +71,6 @@ export abstract class BaseClient {
     );
   }
 
-  // ─── Token helpers ────────────────────────────────────────────
   setToken(token: string): void {
     this.tokens.set('tec_token', token);
   }
@@ -83,7 +79,6 @@ export abstract class BaseClient {
     this.tokens.remove('tec_token');
   }
 
-  // ─── withRetry ────────────────────────────────────────────────
   protected async withRetry<T>(
     fn:         () => Promise<T>,
     maxAttempts = 3,
@@ -110,7 +105,6 @@ export abstract class BaseClient {
     throw lastError;
   }
 
-  // ─── HTTP methods ─────────────────────────────────────────────
   protected async get<T>(path: string): Promise<T>;
   protected async get<T>(path: string, schema: z.ZodSchema<T, z.ZodTypeDef, unknown>): Promise<T>;
   protected async get<T>(path: string, schema?: z.ZodSchema<T, z.ZodTypeDef, unknown>): Promise<T> {
