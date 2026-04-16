@@ -23,14 +23,15 @@ export class TecSdk {
   public readonly notifications: NotificationClient;
 
   constructor(config: TecSdkConfig) {
-    const { gatewayUrl, apiKey } = config;
-    this.auth          = new AuthClient(gatewayUrl, apiKey);
-    this.wallet        = new WalletClient(gatewayUrl, apiKey);
-    this.payment       = new PaymentClient(gatewayUrl, apiKey);
-    this.health        = new HealthClient(gatewayUrl, apiKey);
-    this.assets        = new AssetClient(gatewayUrl, apiKey);
-    this.commerce      = new CommerceClient(gatewayUrl, apiKey);
-    this.notifications = new NotificationClient(gatewayUrl, apiKey);
+    const { gatewayUrl, apiKey, timeout } = config;
+    // ✅ P3-8: timeout بيتمرر لكل الـ clients
+    this.auth          = new AuthClient(gatewayUrl, apiKey, undefined, timeout);
+    this.wallet        = new WalletClient(gatewayUrl, apiKey, undefined, timeout);
+    this.payment       = new PaymentClient(gatewayUrl, apiKey, undefined, timeout);
+    this.health        = new HealthClient(gatewayUrl, apiKey, undefined, timeout);
+    this.assets        = new AssetClient(gatewayUrl, apiKey, undefined, timeout);
+    this.commerce      = new CommerceClient(gatewayUrl, apiKey, undefined, timeout);
+    this.notifications = new NotificationClient(gatewayUrl, apiKey, undefined, timeout);
   }
 
   // ✅ P1-19: auth + health مضافين
@@ -63,5 +64,8 @@ export * from './api/assetClient';
 export * from './api/healthClient';
 export * from './api/commerceClient';
 export * from './api/notificationClient';
-export { BaseClient, TecSdkError } from './api/baseClient';
-export { logger, logInfo, logWarn, logError } from './utils/logger';
+export { BaseClient, TecSdkError }                           from './api/baseClient';
+export { logger, logInfo, logWarn, logError }                from './utils/logger';
+// ✅ P3-7: RequestScopedTokenStore exported
+export { RequestScopedTokenStore, requestScopedStore }       from './core/token-store';
+export { BrowserTokenStore, ServerTokenStore, createTokenStore } from './core/token-store';
