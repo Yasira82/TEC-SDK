@@ -1,4 +1,5 @@
 import { BaseClient } from './baseClient';
+import { TokenStore } from '../core/token-store';
 import { z }          from 'zod';
 
 export const CreateAssetSchema = z.object({
@@ -23,8 +24,8 @@ export const AssetSchema = z.object({
 export type Asset = z.infer<typeof AssetSchema>;
 
 export class AssetClient extends BaseClient {
-  constructor(baseURL: string, apiKey?: string) {
-    super(baseURL, apiKey);
+  constructor(baseURL: string, apiKey?: string, tokenStore?: TokenStore, timeout?: number) {
+    super(baseURL, apiKey, tokenStore, timeout);
   }
 
   async getHealth(): Promise<{ status: string }> {
@@ -66,4 +67,4 @@ export class AssetClient extends BaseClient {
       return z.object({ success: z.boolean() }).parse(res);
     });
   }
-        }
+}
