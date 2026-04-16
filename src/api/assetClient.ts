@@ -67,4 +67,4 @@ export class AssetClient extends BaseClient {
       return z.object({ success: z.boolean() }).parse(res);
     });
   }
-  }
+        }
