@@ -1,4 +1,5 @@
 import { BaseClient } from './baseClient';
+import { TokenStore } from '../core/token-store';
 import { z }          from 'zod';
 
 export const NotificationSchema = z.object({
@@ -13,21 +14,21 @@ export const NotificationSchema = z.object({
 });
 
 export const NotificationPreferencesSchema = z.object({
-  userId:           z.string(),
-  pushEnabled:      z.boolean(),
-  emailEnabled:     z.boolean(),
-  paymentAlerts:    z.boolean(),
-  orderAlerts:      z.boolean(),
-  promotionAlerts:  z.boolean(),
-  securityAlerts:   z.boolean(),
+  userId:          z.string(),
+  pushEnabled:     z.boolean(),
+  emailEnabled:    z.boolean(),
+  paymentAlerts:   z.boolean(),
+  orderAlerts:     z.boolean(),
+  promotionAlerts: z.boolean(),
+  securityAlerts:  z.boolean(),
 });
 
 export type Notification            = z.infer<typeof NotificationSchema>;
 export type NotificationPreferences = z.infer<typeof NotificationPreferencesSchema>;
 
 export class NotificationClient extends BaseClient {
-  constructor(baseURL: string, apiKey?: string) {
-    super(baseURL, apiKey);
+  constructor(baseURL: string, apiKey?: string, tokenStore?: TokenStore, timeout?: number) {
+    super(baseURL, apiKey, tokenStore, timeout);
   }
 
   async getNotifications(userId: string, params?: { unreadOnly?: boolean; limit?: number }): Promise<Notification[]> {
@@ -68,10 +69,7 @@ export class NotificationClient extends BaseClient {
     });
   }
 
-  async updatePreferences(
-    userId: string,
-    prefs:  Partial<Omit<NotificationPreferences, 'userId'>>,
-  ): Promise<NotificationPreferences> {
+  async updatePreferences(userId: string, prefs: Partial<Omit<NotificationPreferences, 'userId'>>): Promise<NotificationPreferences> {
     return this.withRetry(async () => {
       const res = await this.patch<unknown>(`/api/notifications/preferences/${encodeURIComponent(userId)}`, prefs);
       return NotificationPreferencesSchema.parse(res);
@@ -84,4 +82,4 @@ export class NotificationClient extends BaseClient {
       return z.object({ success: z.boolean() }).parse(res);
     });
   }
-                          }
+}
