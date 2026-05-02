@@ -42,8 +42,19 @@ jobs:
       - name: Install
         run: npm install
 
+      # ✅ Test with coverage
       - name: Test
-        run: npm test
+        run: npm run test:coverage
 
+      # ✅ Build بعد الـ tests
       - name: Build
         run: npm run build
+
+      # ✅ Upload coverage report
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sdk-coverage
+          path: coverage/
+          retention-days: 7
