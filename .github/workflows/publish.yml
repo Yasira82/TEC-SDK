@@ -12,6 +12,7 @@ on:
     paths:
       - 'src/**'
       - 'package.json'
+  workflow_dispatch:
 
 jobs:
   security-gate:
@@ -82,7 +83,6 @@ jobs:
       - name: Build SDK
         run: npm run build
 
-      # ✅ Publish فقط على push
       - name: Publish to npm
         if: github.event_name == 'push'
         run: |
