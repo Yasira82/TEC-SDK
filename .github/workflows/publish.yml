@@ -2,12 +2,16 @@ name: Publish TEC SDK to npm
 
 on:
   push:
-    branches:
-      - main
-  # ✅ P2-8: اشتغل على PRs كمان
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - '.github/workflows/publish.yml'
   pull_request:
-    branches:
-      - main
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
 
 jobs:
   security-gate:
@@ -19,6 +23,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-sdk-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-sdk-
 
       - name: Install dependencies
         run: npm install
@@ -55,6 +66,13 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-sdk-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-sdk-
+
       - name: Install dependencies
         run: npm install
 
@@ -64,7 +82,7 @@ jobs:
       - name: Build SDK
         run: npm run build
 
-      # ✅ Publish فقط على push — مش على PRs
+      # ✅ Publish فقط على push
       - name: Publish to npm
         if: github.event_name == 'push'
         run: |
