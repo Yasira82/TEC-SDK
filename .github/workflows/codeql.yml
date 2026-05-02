@@ -3,15 +3,19 @@ name: 🔍 Security Analysis
 on:
   push:
     branches: [main]
-  # ✅ P2-8: اشتغل على PRs كمان
+    paths:
+      - 'src/**'
+      - '.github/workflows/codeql.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
   schedule:
     - cron: '0 3 * * 1'
 
 jobs:
   security-scan:
-    name: 🔐 Zero-Width Character Scan
+    name: 🔐 Security Scan
     runs-on: ubuntu-latest
 
     steps:
@@ -20,6 +24,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-sdk-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-sdk-
 
       - name: Install dependencies
         run: npm install
@@ -44,7 +55,6 @@ jobs:
           console.log('Clean — no zero-width chars found.');
           "
 
-      # ✅ P2-7: احذف continue-on-error — audit failures تبلوك الـ CI
       - name: npm audit
         run: npm audit --audit-level=high
 
