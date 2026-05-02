@@ -1,54 +1,53 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TecSdk, TecSdkConfig } from '../src/index';
 
 // ── Mocks ──────────────────────────────────────────────────
-vi.mock('../src/api/authClient', () => ({
-  AuthClient: vi.fn().mockImplementation(() => ({
-    setToken:   vi.fn(),
-    clearToken: vi.fn(),
-    logout:     vi.fn(),
+jest.mock('../src/api/authClient', () => ({
+  AuthClient: jest.fn().mockImplementation(() => ({
+    setToken:   jest.fn(),
+    clearToken: jest.fn(),
+    logout:     jest.fn(),
   })),
 }));
 
-vi.mock('../src/api/walletClient', () => ({
-  WalletClient: vi.fn().mockImplementation(() => ({
-    setToken:   vi.fn(),
-    clearToken: vi.fn(),
+jest.mock('../src/api/walletClient', () => ({
+  WalletClient: jest.fn().mockImplementation(() => ({
+    setToken:   jest.fn(),
+    clearToken: jest.fn(),
   })),
 }));
 
-vi.mock('../src/api/paymentClient', () => ({
-  PaymentClient: vi.fn().mockImplementation(() => ({
-    setToken:   vi.fn(),
-    clearToken: vi.fn(),
+jest.mock('../src/api/paymentClient', () => ({
+  PaymentClient: jest.fn().mockImplementation(() => ({
+    setToken:   jest.fn(),
+    clearToken: jest.fn(),
   })),
 }));
 
-vi.mock('../src/api/healthClient', () => ({
-  HealthClient: vi.fn().mockImplementation(() => ({
-    setToken:   vi.fn(),
-    clearToken: vi.fn(),
+jest.mock('../src/api/healthClient', () => ({
+  HealthClient: jest.fn().mockImplementation(() => ({
+    setToken:   jest.fn(),
+    clearToken: jest.fn(),
   })),
 }));
 
-vi.mock('../src/api/assetClient', () => ({
-  AssetClient: vi.fn().mockImplementation(() => ({
-    setToken:   vi.fn(),
-    clearToken: vi.fn(),
+jest.mock('../src/api/assetClient', () => ({
+  AssetClient: jest.fn().mockImplementation(() => ({
+    setToken:   jest.fn(),
+    clearToken: jest.fn(),
   })),
 }));
 
-vi.mock('../src/api/commerceClient', () => ({
-  CommerceClient: vi.fn().mockImplementation(() => ({
-    setToken:   vi.fn(),
-    clearToken: vi.fn(),
+jest.mock('../src/api/commerceClient', () => ({
+  CommerceClient: jest.fn().mockImplementation(() => ({
+    setToken:   jest.fn(),
+    clearToken: jest.fn(),
   })),
 }));
 
-vi.mock('../src/api/notificationClient', () => ({
-  NotificationClient: vi.fn().mockImplementation(() => ({
-    setToken:   vi.fn(),
-    clearToken: vi.fn(),
+jest.mock('../src/api/notificationClient', () => ({
+  NotificationClient: jest.fn().mockImplementation(() => ({
+    setToken:   jest.fn(),
+    clearToken: jest.fn(),
   })),
 }));
 
@@ -63,7 +62,7 @@ describe('TecSdk — facade', () => {
   let sdk: TecSdk;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     sdk = new TecSdk(CONFIG);
   });
 
@@ -141,7 +140,7 @@ describe('TecSdk — facade', () => {
     });
   });
 
-  // ── setAuthToken + clearAuthToken ─────────────────────────
+  // ── token lifecycle ───────────────────────────────────────
   describe('token lifecycle', () => {
     it('set then clear works without error', () => {
       expect(() => {
@@ -161,7 +160,6 @@ describe('TecSdk — facade', () => {
   // ── TecSdkConfig ──────────────────────────────────────────
   describe('TecSdkConfig', () => {
     it('single config definition — no duplicate', () => {
-      // ✅ VM-015 FIXED: TecSdkConfig defined once in src/index.ts
       const config: TecSdkConfig = {
         gatewayUrl: 'https://api.com',
         apiKey:     'key-123',
@@ -170,10 +168,6 @@ describe('TecSdk — facade', () => {
       expect(config.gatewayUrl).toBe('https://api.com');
       expect(config.apiKey).toBe('key-123');
       expect(config.timeout).toBe(10000);
-    });
-
-    it('gatewayUrl is required', () => {
-      expect(() => new TecSdk({ gatewayUrl: '' })).not.toThrow();
     });
 
     it('apiKey is optional', () => {
