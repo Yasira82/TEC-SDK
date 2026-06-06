@@ -30,6 +30,7 @@ Client Components         → packages/tec-core-sdk (NOT this package)
 |----|----------|-------------|--------|
 | NEW-A | SECURITY | No internal Railway URLs leaked via exports | ✅ CLOSED — env vars only |
 | NEW-B | BLOCKING | INTERNAL_SECRET header on all gateway calls | ⚠️ OPS — set on Railway |
+| NEW-L | PATTERN | Frontend bypassed BFF, exposing gateway indirectly | ✅ CLOSED — BFF-first rule documented |
 
 ---
 
@@ -119,6 +120,8 @@ npm run type-check  # TypeScript strict check
 - Do NOT import this package from Client Components
 - Do NOT implement business logic — SDK is contracts only (P5)
 - Do NOT skip Zod validation on any API response
+- Do NOT silence Zod validation errors — unknown response = fail loudly (P6)
+- Do NOT import this SDK in any `'use client'` component — Node.js only
 
 ---
 
@@ -156,6 +159,38 @@ tec-app, tec-ecommerce, tec-assets, tec-commerce
 - INTERNAL_SECRET passed on all gateway calls (enforces NEW-B when set)
 - 100% Zod validation at all API boundaries — no unvalidated responses
 - Semver discipline: breaking contract change = major version bump
+
+---
+
+## Common Debug Patterns
+
+### "SDK call returns 401 from gateway"
+```
+Symptom: TecSdk.payment.* or TecSdk.auth.* returns 401.
+Cause A: Token expired — BFF route must refresh before calling SDK.
+Cause B: INTERNAL_SECRET missing on Railway (NEW-B) — gateway rejects call.
+Fix A:   Add token refresh in the BFF route before the SDK call.
+Fix B:   Set INTERNAL_SECRET on Railway for all 4 services (ops task).
+```
+
+### "Zod validation fails on gateway response"
+```
+Symptom: SDK throws ZodError on a response that looks correct visually.
+Cause:   Backend contract changed without updating SDK Zod schema.
+         This is a P5 violation — SDK must mirror backend exactly.
+Fix:     Update Zod schema in src/types/ to match new backend response shape.
+         Breaking change = semver major version bump required.
+         NEVER silence Zod errors — fail loudly (P6 Fail Closed).
+```
+
+### "SDK imported in Client Component — build fails"
+```
+Symptom: Next.js build error: 'window is not defined' or 'fs not found'.
+Cause:   @yasser172/tec-sdk imported in a 'use client' component.
+         This is a Node.js-only package — forbidden in browser code.
+Fix:     Move the call to an /api/bff/* route (server-side only).
+         Client component → BFF route → SDK → Gateway. Never skip BFF layer.
+```
 
 ---
 
