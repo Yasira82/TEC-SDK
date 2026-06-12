@@ -57,7 +57,6 @@ describe('PaymentClient.createPayment', () => {
     expect(mockPost).toHaveBeenCalledWith(
       '/payments',
       { userId: 'user-456', amount: 3.14159265, currency: 'PI', metadata: {} },
-      expect.anything(),
     );
     expect(result.paymentId).toBe('pay-123');
     expect(result.amount).toBe(3.14159265);
@@ -90,7 +89,6 @@ describe('PaymentClient.approvePayment', () => {
     expect(mockPost).toHaveBeenCalledWith(
       '/payments/pay-123/approve',
       { metadata: undefined },
-      expect.anything(),
     );
     expect(result.status).toBe('approved');
   });
@@ -109,7 +107,6 @@ describe('PaymentClient.completePayment', () => {
     expect(mockPost).toHaveBeenCalledWith(
       '/payments/pay-123/complete',
       { transactionId: 'txn-789', metadata: undefined },
-      expect.anything(),
     );
     expect(result.status).toBe('completed');
   });
@@ -122,7 +119,6 @@ describe('PaymentClient.cancelPayment', () => {
     expect(mockPost).toHaveBeenCalledWith(
       '/payments/pay-123/cancel',
       {},
-      expect.anything(),
     );
     expect(result.status).toBe('cancelled');
   });
@@ -160,7 +156,6 @@ describe('PaymentClient.resolveIncomplete', () => {
     expect(mockPost).toHaveBeenCalledWith(
       '/payments/resolve-incomplete',
       { piPaymentId: 'pi-pay-999' },
-      expect.anything(),
     );
     expect(result.status).toBe('completed');
   });
