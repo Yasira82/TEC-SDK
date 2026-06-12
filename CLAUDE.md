@@ -208,3 +208,51 @@ Full platform context, ADR system, and engineering roadmap:
 → `TEC_MODELS_PAT.prompt.yml` in yasira82/tec-app (branch: claude/ecommerce-engineering-review-EuiQO)
 → `TEC_Ecosystem_AI_Key.prompt.yml` in yasira82/tec-app
 → C-47 Kernel Spec §14 — SDK Contract Rules
+
+---
+
+## Dynamic Orchestration
+
+### Ecosystem Role
+**BFF Server Contract** — typed, validated bridge between frontend /api/bff/* routes and the API Gateway. The contract must match the running backend before publishing.
+
+### Dependency Map
+
+| Direction | Repos / Services |
+|-----------|------------------|
+| Upstream | `tec-core-backend` (API Gateway:4000) — SDK contracts must match backend runtime |
+| Downstream | `tec-app` /api/bff/* · `tec-ecommerce` /api/bff/* · `tec-assets` /api/bff/* · `tec-commerce` /api/bff/* |
+
+### Cross-Repo Workflow Triggers
+
+| Event | Coordinate With | Required Action |
+|-------|----------------|------------------|
+| New API endpoint in backend | tec-core-backend | Backend deploys FIRST → SDK adds Zod schema → apps consume |
+| Breaking API contract change | All 4 apps | Semver MAJOR bump + migration guide — apps update BFF routes |
+| INTERNAL_SECRET header change | tec-core-backend | Must be coordinated — header value must match across gateway + SDK |
+| Gateway URL change | tec-core-backend | `API_GATEWAY_URL` env var — server-only, never NEXT_PUBLIC_ |
+| New service added to backend | tec-core-backend | Add SDK module BEFORE any frontend BFF route uses it |
+
+### Release Chain Position
+
+```
+tec-core-backend (deploy)  ← backend must be live first
+  → tec-sdk (npm publish)  ← HERE (publish FIRST among npm packages)
+    → tec-auth (npm publish)
+      → tec-ui (npm publish)
+        → ALL 4 apps (simultaneous)
+```
+
+### Orchestration Rules
+- NEVER publish SDK before backend is deployed — contracts must match runtime
+- `API_GATEWAY_URL` = server-only env var — NEVER `NEXT_PUBLIC_API_GATEWAY_URL`
+- All API responses MUST have Zod validation — no unvalidated responses
+- `window.*` in SDK source = P1 violation — breaks SSR for all 4 apps (grep check in CI)
+- Retry logic is built into SDK — consuming apps MUST NOT implement their own
+
+### Knowledge Base Reference
+→ `yasira82/tec-knowledge-base` (branch: `claude/gifted-knuth-1yhom3`)
+→ Master index: `knowledge-base/C-57___MASTER_CONTENTS_INDEX.md`
+→ API contracts governance: `knowledge-base/C-69___API_CONTRACTS_GOVERNANCE.md`
+→ Domain ownership matrix: `knowledge-base/C-68___DOMAIN_OWNERSHIP_MATRIX.md`
+→ Release governance: `knowledge-base/C-75___RELEASE_GOVERNANCE_SPEC.md`
