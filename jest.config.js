@@ -9,4 +9,13 @@ module.exports = {
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts'],
+  coverageThreshold: {
+    global: {
+      statements: 60,
+      branches: 60,
+      functions: 60,
+      lines: 60,
+    },
+  },
 };
