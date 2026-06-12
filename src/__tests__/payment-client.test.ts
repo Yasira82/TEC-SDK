@@ -66,7 +66,7 @@ describe('PaymentClient.createPayment', () => {
   it('defaults currency to PI when not provided', async () => {
     mockPost.mockResolvedValueOnce({ data: makePayment() });
     await client.createPayment('user-456', 1);
-    const call = mockPost.mock.calls[0] as unknown[][];
+    const call = mockPost.mock.calls[0] as unknown[];
     expect((call[1] as Record<string, unknown>).currency).toBe('PI');
   });
 
