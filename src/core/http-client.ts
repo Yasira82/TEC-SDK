@@ -4,13 +4,26 @@ import { logger } from '../utils/logger';
 export class TECHttpClient {
   private client: AxiosInstance;
 
-  constructor(
-    baseURL: string = process.env['TEC_GATEWAY_URL'] ??
-      'https://api-gateway-production-6a68.up.railway.app/api',
-  ) {
+  constructor(baseURL?: string) {
+    const resolvedURL =
+      baseURL ??
+      process.env['TEC_GATEWAY_URL'] ??
+      process.env['API_GATEWAY_URL'];
+
+    if (!resolvedURL) {
+      throw new Error(
+        'FATAL: TEC_GATEWAY_URL or API_GATEWAY_URL must be configured',
+      );
+    }
+
+    const secret = process.env['INTERNAL_SECRET'];
+
     this.client = axios.create({
-      baseURL,
-      headers: { 'Content-Type': 'application/json' },
+      baseURL: resolvedURL,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(secret ? { 'x-internal-key': secret } : {}),
+      },
       timeout: 15000,
     });
   }
