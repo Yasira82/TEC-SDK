@@ -64,6 +64,8 @@ export * from './api/assetClient';
 export * from './api/healthClient';
 export * from './api/commerceClient';
 export * from './api/notificationClient';
+// ✅ Canonical payment contract — Single Source of Truth for all BFF routes
+export * from './contracts/payment';
 export { BaseClient, TecSdkError }                           from './api/baseClient';
 export { logger, logInfo, logWarn, logError }                from './utils/logger';
 // ✅ P3-7: RequestScopedTokenStore exported
