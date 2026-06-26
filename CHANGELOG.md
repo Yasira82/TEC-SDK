@@ -11,8 +11,8 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ### Added
 - `LICENSE` (MIT) file + `license` field; CHANGELOG included in published files.
-- npm publish provenance (`--provenance` + `id-token: write`).
 - Dependabot config (npm + github-actions, weekly).
+  (npm provenance was evaluated but skipped — unsupported for private source repos.)
 
 ### Changed
 - `tsconfig`: enabled `noUncheckedIndexedAccess` for shipped code (tests relaxed via ts-jest).
