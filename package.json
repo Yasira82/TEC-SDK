@@ -1,6 +1,6 @@
 {
   "name": "@yasser172/tec-sdk",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "TEC Unified SDK — High-performance bridge for Pi Network Microservices",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

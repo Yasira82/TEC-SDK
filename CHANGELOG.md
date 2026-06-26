@@ -7,6 +7,22 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [1.3.1] - 2026-06-26
+
+### Added
+- `LICENSE` (MIT) file + `license` field; CHANGELOG included in published files.
+- npm publish provenance (`--provenance` + `id-token: write`).
+- Dependabot config (npm + github-actions, weekly).
+
+### Changed
+- `tsconfig`: enabled `noUncheckedIndexedAccess` for shipped code (tests relaxed via ts-jest).
+- Coverage thresholds ratcheted to current actual (82/85/67/82).
+
+## [1.3.0] - 2026-06
+
+### Added
+- Canonical payment contract — Single Source of Truth (ADR-009 shapes).
+
 ## [1.2.2] - 2026-04-03
 
 ### Changed
