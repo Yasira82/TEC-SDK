@@ -12,6 +12,7 @@ on:
     paths:
       - 'src/**'
       - 'package.json'
+      - '.github/workflows/publish.yml'   # validate workflow changes on the PR itself
   workflow_dispatch:
 
 permissions:
