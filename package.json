@@ -12,11 +12,13 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "license": "MIT",
   "sideEffects": false,
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "clean": "rm -rf dist",
