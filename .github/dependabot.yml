@@ -1,44 +1,18 @@
 version: 2
-
 updates:
-  - package-ecosystem: 'npm'
-    directory: '/'
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '03:00'
-      timezone: 'Asia/Riyadh'
+      interval: "weekly"
     open-pull-requests-limit: 5
-    labels:
-      - 'dependencies'
-      - 'security'
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
     commit-message:
-      prefix: 'chore(deps)'
-      prefix-development: 'chore(deps-dev)'
-      include: 'scope'
-    # ✅ نمنع كل major version upgrades تلقائياً
-    ignore:
-      - dependency-name: '*'
-        update-types: ['version-update:semver-major']
-    reviewers:
-      - 'Yasser1728'
-    assignees:
-      - 'Yasser1728'
-
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+      prefix: "chore(deps)"
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '03:00'
-      timezone: 'Asia/Riyadh'
-    open-pull-requests-limit: 3
-    labels:
-      - 'dependencies'
-      - 'github-actions'
+      interval: "weekly"
     commit-message:
-      prefix: 'chore(actions)'
-    reviewers:
-      - 'Yasser1728'
-    assignees:
-      - 'Yasser1728'
+      prefix: "chore(ci)"

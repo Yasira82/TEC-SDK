@@ -14,6 +14,10 @@ on:
       - 'package.json'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write   # npm provenance (supply-chain attestation)
+
 jobs:
   security-gate:
     name: 🔐 Security Scan
@@ -93,6 +97,6 @@ jobs:
             exit 0
           fi
           echo "📦 Publishing version $CURRENT..."
-          npm publish --access public
+          npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
