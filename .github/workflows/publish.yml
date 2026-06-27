@@ -12,11 +12,15 @@ on:
     paths:
       - 'src/**'
       - 'package.json'
+      - '.github/workflows/publish.yml'   # validate workflow changes on the PR itself
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write   # npm provenance (supply-chain attestation)
+  # NOTE: npm provenance (--provenance + id-token) is intentionally NOT used —
+  # this source repo is PRIVATE, and npm provenance only supports PUBLIC source
+  # repos (422 "Unsupported source repository visibility: private"). Re-enable
+  # id-token: write + --provenance only if this repo is made public.
 
 jobs:
   security-gate:
@@ -97,6 +101,6 @@ jobs:
             exit 0
           fi
           echo "📦 Publishing version $CURRENT..."
-          npm publish --access public --provenance
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
