@@ -5,6 +5,7 @@ import { HealthClient }       from './api/healthClient';
 import { AssetClient }        from './api/assetClient';
 import { CommerceClient }     from './api/commerceClient';
 import { NotificationClient } from './api/notificationClient';
+import { AnalyticsClient }    from './api/analyticsClient';
 
 // ✅ P1-20: TecSdkConfig تعريف واحد فقط هنا
 export interface TecSdkConfig {
@@ -21,6 +22,7 @@ export class TecSdk {
   public readonly assets:        AssetClient;
   public readonly commerce:      CommerceClient;
   public readonly notifications: NotificationClient;
+  public readonly analytics:     AnalyticsClient;
 
   constructor(config: TecSdkConfig) {
     const { gatewayUrl, apiKey, timeout } = config;
@@ -32,6 +34,7 @@ export class TecSdk {
     this.assets        = new AssetClient(gatewayUrl, apiKey, undefined, timeout);
     this.commerce      = new CommerceClient(gatewayUrl, apiKey, undefined, timeout);
     this.notifications = new NotificationClient(gatewayUrl, apiKey, undefined, timeout);
+    this.analytics     = new AnalyticsClient(gatewayUrl, apiKey, undefined, timeout);
   }
 
   // ✅ P1-19: auth + health مضافين
@@ -43,6 +46,7 @@ export class TecSdk {
     this.assets.setToken(token);
     this.commerce.setToken(token);
     this.notifications.setToken(token);
+    this.analytics.setToken(token);
   }
 
   clearAuthToken(): void {
@@ -53,6 +57,7 @@ export class TecSdk {
     this.assets.clearToken();
     this.commerce.clearToken();
     this.notifications.clearToken();
+    this.analytics.clearToken();
   }
 }
 
@@ -64,6 +69,7 @@ export * from './api/assetClient';
 export * from './api/healthClient';
 export * from './api/commerceClient';
 export * from './api/notificationClient';
+export * from './api/analyticsClient';
 // ✅ Canonical payment contract — Single Source of Truth for all BFF routes
 export * from './contracts/payment';
 export { BaseClient, TecSdkError }                           from './api/baseClient';
