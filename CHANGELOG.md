@@ -7,6 +7,14 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [1.4.0] - 2026-06-27
+
+### Added
+- **`TecSdk.analytics`** client — read-only access to tec-analytics-service:
+  `getOverview()`, `getPayments()`, `getUsers()`, `getEvents(limit)`. Zod-validated,
+  envelope-aware (`{ success, data }`). Backs the upcoming Analytics frontend BFF.
+- `repository` / `homepage` / `bugs` package metadata.
+
 ## [1.3.1] - 2026-06-26
 
 ### Added
