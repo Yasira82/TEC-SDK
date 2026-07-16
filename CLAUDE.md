@@ -196,8 +196,8 @@ npm run build        # clean dist/
 grep -r "window\." src/ && echo "FAIL: browser API detected" || echo "clean"
 grep -r "NEXT_PUBLIC_" src/ && echo "FAIL: public env detected" || echo "clean"
 git status           # clean
-git fetch origin claude/ecommerce-engineering-review-EuiQO
-git rebase origin/claude/ecommerce-engineering-review-EuiQO
+git fetch origin main
+git rebase origin/main
 ```
 
 ---
@@ -205,7 +205,7 @@ git rebase origin/claude/ecommerce-engineering-review-EuiQO
 ## Platform Context
 
 Full platform context, ADR system, and engineering roadmap:
-→ `TEC_MODELS_PAT.prompt.yml` in yasira82/tec-app (branch: claude/ecommerce-engineering-review-EuiQO)
+→ `TEC_MODELS_PAT.prompt.yml` in yasira82/tec-app (branch: main)
 → `TEC_Ecosystem_AI_Key.prompt.yml` in yasira82/tec-app
 → C-47 Kernel Spec §14 — SDK Contract Rules
 
