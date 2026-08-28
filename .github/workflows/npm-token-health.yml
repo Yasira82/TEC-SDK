@@ -1,0 +1,63 @@
+name: npm token health
+
+# Answers one question on a schedule: does the publish credential still work?
+#
+# Why this exists
+# ---------------
+# NPM_TOKEN expires, and npm's expiry has a hard ceiling — the current token
+# runs to 2026-11-25 because that is the LONGEST that can be issued, not a date
+# anyone chose. So this recurs by design; the only question is how you find out.
+#
+# Today you find out mid-release. The August 2026 expiry surfaced as `E404` on
+# publish, and on a SCOPED package `E404` from npm means "you are not
+# authenticated", not "no such package" — so the first hour went into looking
+# for a package that was never missing.
+#
+# A dead credential is not an event that should wait for the next release to
+# announce itself. This turns it into a Monday morning red check with the actual
+# reason in the title.
+#
+# It does NOT publish, bump, or write anything. It authenticates and exits.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'    # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Can we still publish @yasser172/tec-sdk?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Assert the publish credential still authenticates
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error title=NPM_TOKEN missing::The secret is not set on this repo. Publishing @yasser172/tec-sdk will fail."
+            exit 1
+          fi
+
+          # `npm whoami` is the smallest call that actually exercises the
+          # credential against the registry. A green run here means a publish
+          # would authenticate; it says nothing about version or build.
+          if ! WHO=$(npm whoami 2>&1); then
+            echo "::error title=NPM_TOKEN no longer authenticates::$WHO"
+            echo ""
+            echo "The token is expired, revoked, or wrong. Publishing @yasser172/tec-sdk will"
+            echo "fail — and it will fail as E404, which on a scoped package"
+            echo "means AUTH, not 'package not found'. Do not go looking for the"
+            echo "package. Issue a new token and update the NPM_TOKEN secret."
+            exit 1
+          fi
+
+          echo "✅ npm credential valid — authenticates as $WHO"
+          echo "   (a publish of @yasser172/tec-sdk would get past authentication)"
