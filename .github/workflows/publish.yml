@@ -101,6 +101,28 @@ jobs:
             exit 0
           fi
           echo "📦 Publishing version $CURRENT..."
-          npm publish --access public
+
+          # Publish, and if it fails, say what the failure actually means.
+          #
+          # NPM_TOKEN expires — 2026-11-25 is the LONGEST npm will issue, not a
+          # date anyone chose, so this recurs by design. When it lapsed in
+          # August 2026 npm answered `E404`, and on a SCOPED package E404 means
+          # NOT AUTHENTICATED, not "no such package". An hour went into looking
+          # for a package that was never missing.
+          #
+          # The fix for that hour is not detecting sooner — CI already goes red
+          # in a minute. It is that the error should not send you the wrong way.
+          if ! OUTPUT=$(npm publish --access public 2>&1); then
+            echo "$OUTPUT"
+            if echo "$OUTPUT" | grep -qiE 'E404|404 Not Found'; then
+              echo ""
+              echo "::error title=Read this before debugging::E404 on a SCOPED package means NOT AUTHENTICATED, not 'package missing'."
+              echo "  The package exists. NPM_TOKEN is expired, revoked, or absent."
+              echo "  Issue a new npm token and update the NPM_TOKEN repo secret."
+              echo "  Do NOT go looking for the package or re-check its name."
+            fi
+            exit 1
+          fi
+          echo "$OUTPUT"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
