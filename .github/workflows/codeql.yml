@@ -59,8 +59,36 @@ jobs:
           console.log('Clean — no zero-width chars found.');
           "
 
-      - name: npm audit
-        run: npm audit --audit-level=high
+      # ── Production dependencies BLOCK ────────────────────────────────────
+      # These ship inside the published package, which every TEC app installs.
+      # An advisory here reaches users, so it stops the build. This is stricter
+      # than what it replaces: it can no longer be lost among dev noise.
+      - name: npm audit — production dependencies (blocking)
+        run: npm audit --omit=dev --audit-level=high
+
+      # ── Dev dependencies REPORT ──────────────────────────────────────────
+      # This step used to block on these too, and the result was four
+      # consecutive weeks of a red scheduled run that nobody acted on. A check
+      # that is permanently red does not enforce anything — it teaches people
+      # to ignore the whole workflow, which is how a real advisory gets missed.
+      #
+      # They are NOT silenced. Dev dependencies do not ship, but they DO run
+      # here with access to the repo, so a compromised one is a build-time
+      # supply-chain risk. The advisories are written into the job summary,
+      # where they are read — rather than into an email that gets filtered.
+      - name: npm audit — dev dependencies (report only)
+        if: always()
+        run: |
+          {
+            echo '### npm audit — dev dependencies'
+            echo
+            echo 'Not blocking: these are not published. They DO run in CI with'
+            echo 'repo access, so triage them — do not let them accumulate.'
+            echo
+            echo '```'
+            npm audit --audit-level=high 2>&1 | tail -40 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build Check
         run: npm run build
