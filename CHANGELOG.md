@@ -7,6 +7,17 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [2.0.0] - 2026-11-14
+
+### Changed (breaking)
+- **zod 3 → zod 4** (TEC-AUDIT-0020: zod 3 has a high memory-exhaustion advisory with no fix
+  short of 4). The SDK exports zod schemas (`CreatePaymentRequestSchema`, `PaymentAmountSchema`,
+  …), so code that composes them with its own zod must be on zod 4 too — hence the major.
+  Callers of the `TecSdk` client methods see no change: the same requests, the same validated
+  results. Internals: `z.record()` takes its key schema; `ZodType<T>` replaces the removed
+  `ZodSchema<T, ZodTypeDef, unknown>`.
+- Consumers move their range to `^2.0.0` (a `^1.x` range never reaches 2.x).
+
 ## [1.4.0] - 2026-06-27
 
 ### Added

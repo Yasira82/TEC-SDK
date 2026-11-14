@@ -12,7 +12,7 @@ export const ProductSchema = z.object({
   stock:       z.number().optional(),
   isActive:    z.boolean().default(true),
   sellerId:    z.string(),
-  metadata:    z.record(z.unknown()).optional(),
+  metadata:    z.record(z.string(), z.unknown()).optional(),
   createdAt:   z.string(),
   updatedAt:   z.string(),
 });
@@ -32,7 +32,7 @@ export const OrderSchema = z.object({
   totalAmount: z.number(),
   currency:    z.string().default('PI'),
   paymentId:   z.string().nullable().optional(),
-  metadata:    z.record(z.unknown()).optional(),
+  metadata:    z.record(z.string(), z.unknown()).optional(),
   createdAt:   z.string(),
   updatedAt:   z.string(),
 });
@@ -57,7 +57,7 @@ export const CreateOrderSchema = z.object({
     productId: z.string(),
     quantity:  z.number().int().positive(),
   })),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type Product        = z.infer<typeof ProductSchema>;

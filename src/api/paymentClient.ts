@@ -14,7 +14,7 @@ export const PaymentSchema = z.object({
   status:        z.enum(['created', 'approved', 'completed', 'failed', 'cancelled']),
   piPaymentId:   z.string().nullable().optional(),
   transactionId: z.string().nullable().optional(),
-  metadata:      z.record(z.any()).optional(),
+  metadata:      z.record(z.string(), z.any()).optional(),
   createdAt:     dateOrNull,
   updatedAt:     dateOrNull,
   approvedAt:    dateOrNull.optional(),

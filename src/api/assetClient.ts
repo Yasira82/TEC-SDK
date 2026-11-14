@@ -6,7 +6,7 @@ export const CreateAssetSchema = z.object({
   transactionId: z.string(),
   ownerId:       z.string(),
   category:      z.string(),
-  metadata:      z.record(z.unknown()).optional(),
+  metadata:      z.record(z.string(), z.unknown()).optional(),
 });
 
 export type CreateAssetDto = z.infer<typeof CreateAssetSchema>;
@@ -16,7 +16,7 @@ export const AssetSchema = z.object({
   transactionId: z.string(),
   ownerId:       z.string(),
   category:      z.string(),
-  metadata:      z.record(z.unknown()).optional(),
+  metadata:      z.record(z.string(), z.unknown()).optional(),
   createdAt:     z.string(),
   updatedAt:     z.string(),
 });

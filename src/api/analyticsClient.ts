@@ -47,7 +47,7 @@ export const UserAnalyticsSchema = z.object({
 export const AnalyticsEventSchema = z.object({
   id:         z.string(),
   type:       z.string(),
-  payload:    z.record(z.unknown()).nullable().optional(),
+  payload:    z.record(z.string(), z.unknown()).nullable().optional(),
   user_id:    z.string().nullable().optional(),
   created_at: z.string(),
 }).passthrough();
@@ -58,7 +58,7 @@ export type UserAnalytics     = z.infer<typeof UserAnalyticsSchema>;
 export type AnalyticsEvent    = z.infer<typeof AnalyticsEventSchema>;
 
 // All analytics endpoints wrap their payload in { success, data }.
-const envelope = <T>(schema: z.ZodSchema<T, z.ZodTypeDef, unknown>) =>
+const envelope = <T>(schema: z.ZodType<T>) =>
   z.object({ success: z.boolean(), data: schema });
 
 /**

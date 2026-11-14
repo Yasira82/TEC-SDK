@@ -9,7 +9,7 @@ export const NotificationSchema = z.object({
   body:      z.string(),
   type:      z.enum(['payment','wallet','order','system','promotion','security']),
   isRead:    z.boolean().default(false),
-  data:      z.record(z.unknown()).optional(),
+  data:      z.record(z.string(), z.unknown()).optional(),
   createdAt: z.string(),
 });
 
